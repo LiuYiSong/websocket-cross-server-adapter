@@ -970,14 +970,7 @@ In the previous two chapters, we have achieved the following:
 2. **Cross-Server Communication Module (Server-to-Server Only)**  
   Demonstrated how different service nodes communicate via Redis to achieve event broadcasting, targeted messaging, and asynchronous callback handling.
 
-Next, we will move to a more advanced scenario: **combining WebSocket with the CrossServer module** to achieve true **WebSocket distributed communication**, featuring:
-
-- Each service node maintains its own client connections independently  
-- Client-originated events can be broadcast to other server nodes via CrossServer  
-- Supports advanced features like targeted messaging, callback responses, and data aggregation  
-- Enables seamless communication across physical machines, processes, or server instances  
-- The message sending logic in a distributed WebSocket environment remains consistent with that of a single-server setup, requiring almost no code changes, significantly simplifying migration and development effort
-This model combines the real-time communication capabilities of WebSocket with the distributed event coordination mechanism of CrossServer, thereby enabling an efficient, stable, and scalable real-time communication solution across multiple processes, instances, and even physical machines.
+Next, we will move to a more advanced scenario: **combining WebSocket with the CrossServer module** to achieve true **WebSocket distributed communication**.
 
 #### Example start
 
