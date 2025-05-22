@@ -1313,7 +1313,7 @@ Through the examples in the three sections above, you can progressively understa
 
 ## FAQ
 
-[`Detailed FAQ`](./FAQ.en-US.md)。
+[`Detailed FAQ`](./FAQ.en-US.md)
 
 ---
 
