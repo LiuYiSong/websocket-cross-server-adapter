@@ -657,10 +657,6 @@ redis-server --port 6381
 - Each instance must use a different port.
 - If you need to enable remote access, please refer to the official configuration file documentation and modify the bind setting to allow connections from the desired hosts.
 
-After completing the preparation, let's start our cross-service communication example.
-
-Our WebSocketCrossServerAdapter internally uses **ioredis** as the Node.js client library for interacting with Redis. Only utilizes Redis's **Publish/Subscribe** (Pub/Sub) feature and does **not** involve any data persistence or key-value storage, ensuring a lightweight, fast, and stateless design.
-
 This framework uses ioredis as the underlying Redis client.
 All Redis-related configuration parameters are passed directly to ioredis.
 For detailed configuration options and usage, please refer to the official ioredis documentation for best practices and comprehensive guidance.
