@@ -534,30 +534,7 @@ It is recommended to use modules like [`jsonwebtoken`](https://github.com/auth0/
 
 #### 💬 Example Summary
 
-The above example demonstrates the typical use cases and key features of a **single WebSocket server architecture (non-distributed)**. It includes:
-
-#### ✅ Client-side:
-- Supports **message sending with callbacks** (request-response pattern)
-- Built-in **reconnection**, with support for manual disabling
-- **Heartbeat mechanism** to ensure connection liveness and detect disconnects
-- Unified event handling interface for easy extension
-- Handles **disconnect and error events** for better stability and recovery
-- Supports **server-side event registration and handling**
-- Supports **local event registration and handling**
-
-#### ✅ Server-side:
-- Supports mapping between **connected clients and business IDs**
-- Listens to and handles **client-triggered events**
-- Implements authentication flows based on different connection modes, such as fixed port, HTTP shared port, and automatic upgrade handling
-- Simulates **broadcast messaging and room-based message delivery**
-- Responds to **callback-based requests** from clients
-- Simulates **business-level message handling and response**
-
-With these features, the above example essentially covers all major use cases of WebSocket in a single-server context.  
-**A deep understanding of the single WebSocket server communication flow lays a solid foundation for building the upcoming distributed messaging architecture.**
-
-If your project doesn't require cross-server or distributed features right now, feel free to hit the pause button here and just return—gracefully skip the cross-server part.  
-Even if you don’t need it now, it’s worth a quick look as we move on to the next chapter with cross-server examples.
+The above example demonstrates the typical use cases and key features of a **single WebSocket server architecture (non-distributed)**. 
 
 ---
 
