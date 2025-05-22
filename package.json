@@ -1,6 +1,6 @@
 {
   "name": "websocket-cross-server-adapter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Node.js based WebSocket distributed communication framework that enables seamless multi-server collaboration for real-time communication, cross-server event handling, and scalable applications.",
   "main": "index.js",
   "module": "index.mjs",
