@@ -1,0 +1,86 @@
+{
+  "name": "websocket-cross-server-adapter",
+  "version": "1.0.0",
+  "description": "A Node.js based WebSocket distributed communication framework that enables seamless multi-server collaboration for real-time communication, cross-server event handling, and scalable applications.",
+  "main": "index.js",
+  "module": "index.mjs",
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "import": "./index.mjs"
+    }
+  },
+  "scripts": {
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src/",
+    "index.js",
+    "index.mjs",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "WebSocketCrossServerAdapter",
+    "WebSocketConnector",
+    "websocket-cross-server-adapter",
+    "websocket",
+    "adapter",
+    "cross-server",
+    "distributed",
+    "nodejs",
+    "connector",
+    "reconnect",
+    "heartbeat",
+    "websocket cross server",
+    "pubsub",
+    "redis",
+    "microservice",
+    "communication",
+    "cluster",
+    "scalable",
+    "real-time",
+    "game",
+    "game-server",
+    "multiplayer",
+    "online-game",
+    "cocos-creator",
+    "education",
+    "interactive",
+    "e-learning",
+    "live-streaming",
+    "broadcast",
+    "video-conference",
+    "chat-server",
+    "social-network",
+    "collaboration",
+    "remote-work",
+    "webinar"
+  ],
+  "author": {
+    "name": "Liu Yi Song",
+    "email": "349233775@qq.com",
+    "url": "https://github.com/LiuYiSong"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiuYiSong/websocket-cross-server-adapter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LiuYiSong/websocket-cross-server-adapter/issues"
+  },
+  "homepage": "https://github.com/LiuYiSong/websocket-cross-server-adapter",
+  "dependencies": {
+    "debug": "^4.4.1",
+    "ioredis": "^5.6.1",
+    "notepack.io": "^3.0.1",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
