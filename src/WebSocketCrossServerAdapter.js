@@ -479,7 +479,7 @@ class WebSocketCrossServerAdapter {
                         } catch (err) {
                             console.error(`[${eventName}] Listener execution failed:`, err);
                         }
-                        if (once) this.offWs(eventName, fn);
+                        if (once) this.offWebSocketEvent(eventName, fn);
                     });
                 }
             };
