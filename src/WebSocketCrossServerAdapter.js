@@ -9,52 +9,6 @@
  * A communication adapter designed for distributed systems, supporting WebSocket services and cross-server event broadcasting, message delivery, and room management.
  * Suitable for game servers, real-time applications, microservice communication, etc., helping to build a high-performance, loosely coupled, and scalable distributed architecture.
  * 
- * Solves the core issue of Node.js native ws module's inability to scale horizontally and push messages across processes/servers in a distributed architecture.
- * 
- * Key Features:
- * 1. Cross-server Communication (Distributed Event System)
- *    • Uses Redis Pub/Sub mechanism for inter-service communication.
- *    • Supports service-side emit calls, with results available via callbacks or Promises, including info about unresponsive nodes.
- *    • Custom timeout control to prevent request blocking or no-response issues.
- *    • Global event listeners with priority local handling, automatically routing to target nodes.
- *
- * 2. Redis Cluster and Smart Message Routing
- *    • Supports single-node and multi-node Redis deployment across multiple physical servers.
- *    • Dynamic addition of new Redis nodes at runtime, with automatic health status checks.
- *    • Full subscription to all channels, ensuring no message loss.
- *    • Multiple message publishing strategies: random, round-robin, or Ping latency priority.
- *    • Fully decentralized design with equal node functionality, no master-slave dependencies.
- *    • Supports compression/decompression for message transfer, reducing cross-node communication traffic.
- *
- * 3. WebSocket Service & Distributed Message Delivery
- *    • Solves core issue of pushing messages across processes/servers in a distributed environment.
- *    • Global client tracking and distributed message delivery, suitable for high concurrency and strong consistency.
- *    • Supports fine-grained message sending (independent of node location):
- *        ○ Global broadcast (all nodes, all clients)
- *        ○ Single client (cross-node targeting)
- *        ○ Batch sending by socketId
- *        ○ Distributed room broadcast
- *    • Room namespace (roomNamespace) management, supporting multi-business scenario isolation.
- *    • Cross-node statistics: online user count, room member count, heartbeat status, etc.
- *    • WebSocket event handlers can be registered on any node, auto-dispatched across nodes without intermediaries.
- *
- * 4. Flexible & Scalable Architecture
- *    • Cross-server communication, WebSocket, and compression modules are optional and can be combined as needed.
- *    • If distributed functionality is disabled, the system falls back to single-server mode without impacting business logic.
- *    • Custom channels, listeners, and event protocols, for quick adaptation to various business needs.
- *    • Hot-plugging of service nodes and Redis nodes without restarting, enabling seamless system expansion.
- *
- * Summary:
- * WebSocketCrossServerAdapter leverages Redis as the distributed message bus, combined with built-in WebSocket management and client tracking, creating a modular, decentralized,
- * highly scalable distributed communication framework. Key features include:
- *    • Cross-node event communication and asynchronous response mechanism
- *    • Distributed WebSocket message delivery and global room broadcasting
- *    • Auto-routing, timeout control, node monitoring, and self-healing capabilities
- *    • Hot-pluggable, seamless scaling in distributed environments
- *    • Replaces the deployment limitations of native ws in distributed systems
- *
- * This class is a core component for building modern real-time communication systems.
- * 
  */
 
 'use strict';

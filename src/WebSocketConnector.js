@@ -11,16 +11,6 @@
  * It provides automatic and manual reconnection, heartbeat support, event-based communication with response callbacks, 
  * and is suitable for frontend or Node.js clients requiring stable bidirectional communication.
  *
- * Key Features:
- * 1. Auto Reconnection: **Not supported by default.** Reconnection logic is delegated to the developer to handle based on specific disconnection reasons.
- * 2. Manual Reconnection Support: Allows manually triggering reconnection via exposed APIs.
- * 3. Heartbeat Mechanism: Periodically sends heartbeat messages to keep the connection alive and detect disconnection early.
- * 4. Enhanced `emit` with callback and delay handler: Supports both callback and Promise-based mechanisms to receive server responses. 
- *   Additionally, you can define a delay handler that is triggered when the server takes too long to respond (e.g., to show a "loading" prompt).
- * 5. Timeout Control for Server Callback: You can set a timeout for the server response. 
- *   If no response is received within the defined duration, the timeout handler will be triggered to prevent logical blocking.
- * 6. Server-Side Coordination with WebSocketCrossServerAdapter: The server must use WebSocketCrossServerAdapter to support callback-based emit correctly.
- *
  */
 
 'use strict';
