@@ -417,7 +417,7 @@ class WebSocketCrossServerAdapter {
                 switch (eventName) {
                     case 'connection':
                         socket.isAlive = true;
-                        socket.enterBackgroundTime = 0; 
+                        socket.__enterBackgroundTime = 0; 
                         break;
                     case 'pong':
                         socket.isAlive = true; 
