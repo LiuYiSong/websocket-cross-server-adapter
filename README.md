@@ -247,7 +247,7 @@ client.js ：
   })
 
   client.on('close', (event) => {
-    console.log('onCode event:', event.code, event.reason);
+    console.log('onClose event:', event.code, event.reason);
     if (event.code === 4001 ||
       event.code === 4010 ||
       event.code === 4011 ||
@@ -1112,7 +1112,7 @@ for (let i = 0; i < totalClients; i++) {
   })
 
   client.on('close', (event) => {
-    console.log(`[Client ${id},port:${port}] onCode event:`, event.code, event.reason);
+    console.log(`[Client ${id},port:${port}] on Close event:`, event.code, event.reason);
   })
 
   client.on('say', (data) => {
@@ -1156,7 +1156,7 @@ client.on('open', () => {
 })
 
 client.on('close', (event) => {
-  console.log('onCode event:', event.code, event.reason);
+  console.log('onClose event:', event.code, event.reason);
  
 })
 

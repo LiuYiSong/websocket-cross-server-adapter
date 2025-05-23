@@ -53,7 +53,7 @@ client.on('open', () => {
 })
 
 client.on('close', (event) => {
-  console.log('onCode event:', event.code, event.reason);
+  console.log('onClose event:', event.code, event.reason);
   if (event.code === 4001 ||
     event.code === 4010 ||
     event.code === 4011 ||

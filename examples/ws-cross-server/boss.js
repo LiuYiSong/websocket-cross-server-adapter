@@ -28,7 +28,7 @@ client.on('open', () => {
 })
 
 client.on('close', (event) => {
-  console.log('onCode event:', event.code, event.reason);
+  console.log('onClose event:', event.code, event.reason);
  
 })
 

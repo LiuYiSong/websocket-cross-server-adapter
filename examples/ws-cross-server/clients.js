@@ -53,7 +53,7 @@ for (let i = 0; i < totalClients; i++) {
   })
 
   client.on('close', (event) => {
-    console.log(`[Client ${id},port:${port}] onCode event:`, event.code, event.reason);
+    console.log(`[Client ${id},port:${port}] on Close event:`, event.code, event.reason);
   })
 
   client.on('say', (data) => {
