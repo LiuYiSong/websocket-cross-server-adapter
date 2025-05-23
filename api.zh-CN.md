@@ -645,6 +645,18 @@ adapter.emitCrossServer(
 ### 返回值
 - void
 
+### 示例
+
+  ```js
+  // 接收到客户端 say 事件，并且响应回调给客户端
+  adapter.onWebSocketEvent('say', (socket, data, callback) => {
+    console.log(data)
+    if (callback) {
+      callback({ msg: 'This is a callback response for "say"' })
+    }
+  })
+  ```
+  
 ---
 
 ## onceWebSocketEvent(event, listener)
@@ -659,17 +671,6 @@ adapter.emitCrossServer(
 ### 返回值
 - void
 
-### 示例
-
-  ```js
-  // 接收到客户端 say 事件，并且响应回调给客户端
-  adapter.onWebSocketEvent('say', (socket, data, callback) => {
-    console.log(data)
-    if (callback) {
-      callback({ msg: 'This is a callback response for "say"' })
-    }
-  })
-  ```
 ---
 
 ## offWebSocketEvent(event, listener)
