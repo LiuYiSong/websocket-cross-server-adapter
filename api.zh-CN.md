@@ -656,7 +656,7 @@ adapter.emitCrossServer(
     }
   })
   ```
-  
+
 ---
 
 ## onceWebSocketEvent(event, listener)
@@ -768,7 +768,7 @@ adapter.emitCrossServer(
 ## joinRoom(roomNamespace, roomId, socketId)
 
 ### 描述  
-将指定的 socketId 添加到特定房间，管理本地成员关系，并通过 Redis 订阅实现跨服务器同步。
+将指定的 socketId 添加到特定房间，管理本地成员关系，并通过 Redis 订阅房间命令空间。
 
 - 参数 `roomNamespace` 用于定义房间的粒度和类别，开发者可以自由控制命名规则，例如使用类似 `app:chat:game:hot` 的层级命名来表示不同层级或类型的房间。  
 - **注意：** 为了确保本地服务器中该房间的客户端能够接收消息，服务器 **必须订阅** 对应的 `roomNamespace` Redis 频道。  
