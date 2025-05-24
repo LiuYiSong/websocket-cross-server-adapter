@@ -1228,7 +1228,24 @@ node boss
 
 ## 常见问题
 
-[`常见问题详细`](./FAQ.zh-CN.md)
+- [常见问题](FAQ.zh-CN.md#常见问题)
+  - [1. 如何实现客户端到服务器端再到逻辑服务器的消息转发与回调？](FAQ.zh-CN.md#1如何实现客户端到服务器端再到逻辑服务器的消息转发与回调)
+  - [2. 服务器向客户端发送消息时支持回调吗？](FAQ.zh-CN.md#2-服务器向客户端发送消息时支持回调吗)
+  - [3. WebSocket 连接断开后是否会自动退出房间？](FAQ.zh-CN.md#3-websocket-连接断开后是否会自动退出房间)
+  - [4. 如何动态加入Redis节点？](FAQ.zh-CN.md#4-如何动态加入redis节点)
+  - [5. 如何新增服务器节点？](FAQ.zh-CN.md#5-如何新增服务器节点)
+  - [6. 每个服务器节点的 Redis 配置必须一致吗？](FAQ.zh-CN.md#6-每个服务器节点的-redis-配置必须一致吗)
+  - [7. 如何配置 Redis 发布节点选择策略？](FAQ.zh-CN.md#7-如何配置-redis-发布节点选择策略)
+  - [8. Redis 节点配置多少个合适？](FAQ.zh-CN.md#8-redis-节点配置多少个合适)
+  - [9. WebSocketCrossServerAdapter 何时应该启用 Redis 数据压缩功能？](FAQ.zh-CN.md#9-websocketcrossserveradapter-何时应该启用-redis-数据压缩功能)
+  - [10. WebSocket 服务器端到客户端的数据传输支持压缩吗？](FAQ.zh-CN.md#10-websocket-服务器端到客户端的数据传输支持压缩吗)
+  - [11. 房间的命名空间该如何设计？](FAQ.zh-CN.md#11-房间的命名空间该如何设计)
+  - [12. 在分布式 WebSocket 服务中，如何获取房间或者玩家相关的信息？](FAQ.zh-CN.md#12-在分布式-websocket-服务中如何获取房间或者玩家相关的信息)
+  - [13. 在分布式 WebSocket 服务中，如何把用户分配到不同的 WebSocket 服务器？](FAQ.zh-CN.md#13-在分布式-websocket-服务中如何把用户分配到不同的-websocket-服务器)
+  - [14. WebSocketConnector 客户端断线后不会自动重连吗？](FAQ.zh-CN.md#14-websocketconnector-客户端断线后不会自动重连吗)
+  - [15. 前端环境如何使用 WebSocketConnector 类？](FAQ.zh-CN.md#15-前端环境如何使用-websocketconnector-类)
+  - [16. WebSocketConnector 客户端只能使用 URL 方式传递参数吗？](FAQ.zh-CN.md#16-websocketconnector-客户端只能使用-url-方式传递参数吗)
+  - [17. 如何安全且兼容地传递认证及其他敏感信息？](FAQ.zh-CN.md#17-如何安全且兼容地传递认证及其他敏感信息)
 
 ---
 

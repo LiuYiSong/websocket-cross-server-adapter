@@ -1279,7 +1279,24 @@ Through the examples in the three sections above, you can progressively understa
 
 ## FAQ
 
-[`Detailed FAQ`](./FAQ.en-US.md)
+- [FAQ](FAQ.en-US.md#faq)
+  - [1. How to implement message forwarding and callback from client → WebSocket server → logic server?](FAQ.en-US.md#1-how-to-implement-message-forwarding-and-callback-from-client--websocket-server--logic-server)
+  - [2. Does the server support callbacks when sending messages to clients?](FAQ.en-US.md#2-does-the-server-support-callbacks-when-sending-messages-to-clients)
+  - [3. Will a user automatically leave rooms after the WebSocket connection is closed?](FAQ.en-US.md#3-will-a-user-automatically-leave-rooms-after-the-websocket-connection-is-closed)
+  - [4. How to Dynamically Add Redis Nodes?](FAQ.en-US.md#4-how-to-dynamically-add-redis-nodes)
+  - [5. How to Add a New WebSocket Server Node?](FAQ.en-US.md#5-how-to-add-a-new-websocket-server-node)
+  - [6. Should every server node have the same Redis configuration?](FAQ.en-US.md#6-should-every-server-node-have-the-same-redis-configuration)
+  - [7. How to Configure Redis Publish Strategy?](FAQ.en-US.md#7-how-to-configure-redis-publish-strategy)
+  - [8. How Many Redis Nodes Are Appropriate?](FAQ.en-US.md#8-how-many-redis-nodes-are-appropriate)
+  - [9. When Should the Redis Data Compression Feature Be Enabled in WebSocketCrossServerAdapter?](FAQ.en-US.md#9-when-should-the-redis-data-compression-feature-be-enabled-in-websocketcrossserveradapter)
+  - [10. Does the WebSocket server-to-client data transmission support compression?](FAQ.en-US.md#10-does-the-websocket-server-to-client-data-transmission-support-compression)
+  - [11. How Should Room Namespaces Be Designed?](FAQ.en-US.md#11-how-should-room-namespaces-be-designed)
+  - [12. How to retrieve information about rooms or players in a distributed WebSocket service?](FAQ.en-US.md#12-how-to-retrieve-information-about-rooms-or-players-in-a-distributed-websocket-service)
+  - [13. How to distribute users to different WebSocket servers in a distributed WebSocket service?](FAQ.en-US.md#13-how-to-distribute-users-to-different-websocket-servers-in-a-distributed-websocket-service)
+  - [14. Does WebSocketConnector automatically reconnect after disconnection?](FAQ.en-US.md#14-does-websocketconnector-automatically-reconnect-after-disconnection)
+  - [15. How to Use the WebSocketConnector Class in Frontend Environments?](FAQ.en-US.md#15-how-to-use-the-websocketconnector-class-in-frontend-environments)
+  - [16. Can the WebSocketConnector client only pass parameters via the URL?](FAQ.en-US.md#16-can-the-websocketconnector-client-only-pass-parameters-via-the-url)
+  - [17. How to securely and compatibly transmit authentication and other sensitive information?](FAQ.en-US.md#17-how-to-securely-and-compatibly-transmit-authentication-and-other-sensitive-information)
 
 ---
 
