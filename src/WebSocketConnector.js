@@ -311,7 +311,15 @@ class WebSocketConnector {
      * @returns {void}
      */
     on(event, listener) {
-        if (!event || typeof listener !== 'function') return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
         this.webSocketEventListeners[event].push({ fn: listener, once: false });
     }
@@ -324,7 +332,15 @@ class WebSocketConnector {
      * @returns {void}
      */
     once(event, listener) {
-        if (!event || typeof listener !== 'function') return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
         this.webSocketEventListeners[event].push({ fn: listener, once: true });
     }
@@ -337,7 +353,16 @@ class WebSocketConnector {
      * @returns {void}
      */
     off(event, listener) {
-        if (!event || typeof listener !== 'function') return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
+        
         const listeners = this.webSocketEventListeners[event];
         if (listeners) {
             this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listener);

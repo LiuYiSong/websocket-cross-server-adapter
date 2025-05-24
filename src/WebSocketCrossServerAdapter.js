@@ -872,6 +872,15 @@ class WebSocketCrossServerAdapter {
      */
     onCrossServerEvent(event, listener) {
         if (!this.enableCrossServer) return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
         if (!this.crossServerEventListeners[event]) this.crossServerEventListeners[event] = [];
         this.crossServerEventListeners[event].push({ fn: listener, once: false });
     }
@@ -885,6 +894,15 @@ class WebSocketCrossServerAdapter {
      */
     onceCrossServerEvent(event, listener) {
         if (!this.enableCrossServer) return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
         if (!this.crossServerEventListeners[event]) this.crossServerEventListeners[event] = [];
         this.crossServerEventListeners[event].push({ fn: listener, once: true });
     }
@@ -896,6 +914,15 @@ class WebSocketCrossServerAdapter {
      * @param {Function} listener - The listener function to be removed.
      */
     offCrossServerEvent(event, listener) {
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
+        }
         const listeners = this.crossServerEventListeners[event];
         if (listeners) {
             this.crossServerEventListeners[event] = listeners.filter(item => item.fn !== listener);
@@ -1408,16 +1435,20 @@ class WebSocketCrossServerAdapter {
      * @returns {void}
      */
     onWebSocketEvent(event, listener) {
-        // Check if both event and listener are provided, if not, log a debug message
-        if (!event || !listener) {
-            debug('Error: Both event and listener must be provided.');
-            return; 
-        }
-
         // If WebSocket service is disabled, skip !
         if (!this.enableWebSocket) {
             debug('WebSocket service is disabled, skipping event registration for:', event);
             return;
+        }
+
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
         }
 
         // If there is no array of listeners for the event, initialize it.
@@ -1435,15 +1466,20 @@ class WebSocketCrossServerAdapter {
      * @returns {void}
      */
     onceWebSocketEvent(event, listener) {
-        // Check if both event and listener are provided, if not, log a debug message
-        if (!event || !listener) {
-            debug('Error: Both event and listener must be provided.');
-            return; // Early return if any parameter is missing
-        }
         // If WebSocket service is disabled, skip !
         if (!this.enableWebSocket) {
             debug('WebSocket service is disabled, skipping event registration for:', event);
             return;
+        }
+
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
         }
 
         // If there is no array of listeners for the event, initialize it.
@@ -1461,15 +1497,20 @@ class WebSocketCrossServerAdapter {
      * @returns {void}
      */
     offWebSocketEvent(event, listener) {
-        // Check if both event and listener are provided, if not, log a debug message
-        if (!event || !listener) {
-            debug('Error: Both event and listener must be provided.');
-            return; // Early return if any parameter is missing
-        }
         // If WebSocket service is disabled, skip !
         if (!this.enableWebSocket) {
             debug('WebSocket service is disabled, skipping event registration for:', event);
             return;
+        }
+
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        // Ensure listener is a function
+        if (typeof listener !== 'function') {
+            throw new TypeError('listener must be a function');
         }
         const listeners = this.webSocketEventListeners[event];
         if (listeners) {
