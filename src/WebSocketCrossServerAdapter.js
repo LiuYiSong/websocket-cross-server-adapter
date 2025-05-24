@@ -699,7 +699,7 @@ class WebSocketCrossServerAdapter {
             message = JSON.parse(message);
         } catch (err) {
             console.error('Failed to parse socket message to JSON:', err);
-            return; 
+            return;
         }
 
         // Check if the message has an event property
@@ -712,21 +712,22 @@ class WebSocketCrossServerAdapter {
         const listeners = this.webSocketEventListeners[message.event];
         if (!listeners) return;
 
+        // Handle callback-based listeners
+        const sendCallback = message.callbackId
+            ? (data) => {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        message: data,
+                        callbackId: message.callbackId
+                    }));
+                }
+            }
+            : null;
+
+
         // Process each listener
         listeners.forEach(({ fn, once }) => {
             try {
-                // Handle callback-based listeners
-                const sendCallback = message.callbackId ? (data) => {
-                    // If there is a callbackId and the socket is OPEN, send the callback data
-                    if (message.callbackId && socket.readyState === WebSocket.OPEN) {
-                        let payload = {
-                            message: data,
-                            callbackId: message.callbackId
-                        }
-                        socket.send(JSON.stringify(payload));
-                    }
-                } : null;
-
                 // Call the listener function and pass the sendCallback
                 fn(socket, message, sendCallback);
             } catch (err) {
@@ -758,35 +759,34 @@ class WebSocketCrossServerAdapter {
             return;
         }
 
+        // Server-to-server callback (reply to the original requesting server)
+        const serverCallback = callbackId ? (callBackData) => {
+            this.emitCrossServer('', {
+                targetServer: [targetServer],
+                callbackId,
+                isCallback: true,
+                message: callBackData
+            });
+        } : null;
+
+        // Determine whether to automatically respond to the client
+        const isClientCallback = data.message?.autoClientCallback &&
+            data.message?.clientSocketId &&
+            (data.message?.clientCallbackId || data.message?.data?.callbackId);
+
+        // Check if this is a forwarded WebSocket event with player and client callbackId
+        const clientCallback = isClientCallback ? (clientData) => {
+            // 'cs_c_cb' event indicates a cross-server client callback
+            this.toSocketId(data.message.clientSocketId, 'cs_c_cb', {
+                message: clientData,
+                callbackId: data.message?.clientCallbackId || data.message?.data?.callbackId,
+                serverName: this.serverName,
+            });
+        } : null;
+
         // Iterate through all registered listeners and execute them
         this.crossServerEventListeners[event].forEach(({ fn, once }) => {
             try {
-                // Server-to-server callback (reply to the original requesting server)
-                const serverCallback = callbackId ? (callBackData) => {                   
-                    this.emitCrossServer('', {
-                        targetServer: [targetServer],        
-                        callbackId,                  
-                        isCallback: true,              
-                        message: callBackData         
-                    });
-                } : null;
-
-                // Determine whether to automatically respond to the client
-                const isClientCallback = data.message?.autoClientCallback &&
-                    data.message?.clientSocketId &&
-                    (data.message?.clientCallbackId || data.message?.callbackId);
-
-                // Check if this is a forwarded WebSocket event with player and client callbackId
-                const clientCallback = isClientCallback ? (clientData) => {
-                    let payload = {
-                        message: clientData,
-                        callbackId: data.message?.clientCallbackId || data.message?.data?.callbackId,
-                        serverName: this.serverName,
-                    }
-                    // 'cs_c_cb' event indicates a cross-server client callback
-                    this.toSocketId(data.message.clientSocketId, 'cs_c_cb', payload);
-                } : null;
-
                 // Execute the listener function with event data and optional callbacks
                 fn(data, serverCallback, clientCallback);
             } catch (err) {
