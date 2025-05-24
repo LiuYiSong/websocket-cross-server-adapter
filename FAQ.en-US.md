@@ -24,12 +24,6 @@
 ### 1. How to implement message forwarding and callback from client → WebSocket server → logic server?
 In a typical game scenario, the client sends a request (e.g., a matchmaking request) to the WebSocket server it is connected to. These requests are usually processed by a dedicated game logic server (e.g., GameServer), and the result is returned to the client.
 
-Below are two common implementation strategies:
-
-#### Option 1: WebSocket server handles the callback to the client
-
-**The game server processes the logic and returns the result to the WebSocket server, which then responds to the client.**
-
 1. The client sends a request, for example:
 
 ```js
@@ -39,7 +33,9 @@ client.emit('matchRequest', { mode: 'ranked' }, (err, data) => {
   }
 })
 ```
+
 2. The WebSocket server receives the event and forwards it to gameServer:
+
 ```js
 wsServer.onWebSocketEvent('matchRequest', (socket, data, callback) => {
   wsServer.emitCrossServer('matchRequest', {
@@ -54,6 +50,7 @@ wsServer.onWebSocketEvent('matchRequest', (socket, data, callback) => {
 ``` 
 
 3. The gameServer processes the event and calls back with the result:
+
 ```js
 gameServer.onCrossServerEvent('matchRequest', (data, callback, clientCallback) => {
   let matchResult = {};
@@ -64,42 +61,6 @@ gameServer.onCrossServerEvent('matchRequest', (data, callback, clientCallback) =
 })
 
 ```
-#### Option 2: GameServer directly responds to the client
-
-**Instead of routing the result back through the WebSocket server, the gameServer directly triggers a response to the target client.**
-
-This is especially useful when you want to simplify the callback logic and let the logic server communicate with the client as if it were local.
-
-The changes are as follows:
-2. The WebSocket server receives the request and forwards it to gameServer, including client callback metadata:
-```js
-wsServer.onWebSocketEvent('matchRequest', (socket, data, callback) => {
-  wsServer.emitCrossServer('matchRequest', {
-    autoClientCallback: true,           // Enable auto-response to client
-    clientSocketId: socket.socketId,    // Target client's socketId
-    clientCallbackId: data.callbackId,  // Original callback identifier from client
-    data
-  }, null, {
-    targetServer: ['gameServer'],
-  });
-});
-```
-3. The gameServer processes the event and uses the provided clientCallback to respond directly to the client:
-```js
-gameServer.onCrossServerEvent('matchRequest', (data, callback, clientCallback) => {
-  const matchResult = { success: true, roomId: 'abc123' };
-
-  // Use clientCallback to return the result directly to the client
-  if (clientCallback) {
-    clientCallback(matchResult);
-  }
-});
-
-```
-#### 📝 Note: 
-
-In fact, the clientCallback essentially routes back to the client through the original WebSocket server.
-However, in terms of logical design, you no longer need to worry about returning to the original WebSocket server, thereby reducing relay code and coupling.
 
 ### 2. Does the server support callbacks when sending messages to clients?
 

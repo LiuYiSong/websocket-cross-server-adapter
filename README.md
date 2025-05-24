@@ -717,7 +717,6 @@ const crossServer = new WebSocketCrossServerAdapter({
 
 // Register cross-server event listener
 crossServer.onCrossServerEvent('say', (data, callback) => {
-  // The actual sent data can be accessed via the data.message property
   console.log('Received "say" event from another server:', data);
  
   // If the sender uses callback or Promise to send the message, then callback is a valid function and can be called directly to respond
@@ -1105,7 +1104,7 @@ for (let i = 0; i < totalClients; i++) {
           console.log(err)
         } else {
           console.log(`[Client ${id},port:${port}] Received joinRoom callback response:`);
-          console.log(data.message)
+          console.log(data)
         }
       })
     }

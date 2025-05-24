@@ -648,7 +648,6 @@ class WebSocketCrossServerAdapter {
                     }
                 }
             }
-
         } else if (channel === this.broadcastChannel) {
             // Handle broadcast channel messages
             this.wss.clients.forEach((ws) => {
@@ -693,7 +692,6 @@ class WebSocketCrossServerAdapter {
             return;
         }
 
-        
         // Attempt to parse the message, handle any parsing error
         try {
             message = JSON.parse(message);
@@ -703,7 +701,7 @@ class WebSocketCrossServerAdapter {
         }
 
         // Check if the message has an event property
-        if (!message || !message.event) {
+        if (!message || !message.event || typeof message.event !== 'string') {
             debug(`[_handleWebSocketMessage] Invalid message or message.event}`);
             return;
         };
@@ -717,7 +715,7 @@ class WebSocketCrossServerAdapter {
             ? (data) => {
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
-                        message: data,
+                        payload: data,
                         callbackId: message.callbackId
                     }));
                 }
@@ -729,7 +727,7 @@ class WebSocketCrossServerAdapter {
         listeners.forEach(({ fn, once }) => {
             try {
                 // Call the listener function and pass the sendCallback
-                fn(socket, message, sendCallback);
+                fn(socket, message.payload, sendCallback);
             } catch (err) {
                 // Handle listener execution failure
                 console.error(`[${message.event}] Listener execution failed:`, err);
@@ -761,26 +759,13 @@ class WebSocketCrossServerAdapter {
 
         // Server-to-server callback (reply to the original requesting server)
         const serverCallback = callbackId ? (callBackData) => {
-            this.emitCrossServer('', {
+
+            // `_Cs_Cb_` is a built-in event name reserved for cross-service callback handling
+            this.emitCrossServer('_Cs_Cb_', {
                 targetServer: [targetServer],
                 callbackId,
                 isCallback: true,
-                message: callBackData
-            });
-        } : null;
-
-        // Determine whether to automatically respond to the client
-        const isClientCallback = data.message?.autoClientCallback &&
-            data.message?.clientSocketId &&
-            (data.message?.clientCallbackId || data.message?.data?.callbackId);
-
-        // Check if this is a forwarded WebSocket event with player and client callbackId
-        const clientCallback = isClientCallback ? (clientData) => {
-            // 'cs_c_cb' event indicates a cross-server client callback
-            this.toSocketId(data.message.clientSocketId, 'cs_c_cb', {
-                message: clientData,
-                callbackId: data.message?.clientCallbackId || data.message?.data?.callbackId,
-                serverName: this.serverName,
+                payload: callBackData
             });
         } : null;
 
@@ -788,7 +773,7 @@ class WebSocketCrossServerAdapter {
         this.crossServerEventListeners[event].forEach(({ fn, once }) => {
             try {
                 // Execute the listener function with event data and optional callbacks
-                fn(data, serverCallback, clientCallback);
+                fn(data, serverCallback);
             } catch (err) {
                 console.error(`Local listener error for ${event}:`, err);
             }
@@ -937,7 +922,6 @@ class WebSocketCrossServerAdapter {
      * @returns {boolean} Whether the publish operation was successful
      */
     publishRedisMessage(channel, message) {
-
         if (!channel || typeof channel !== 'string') {
             throw new TypeError('channel must be a non-empty string');
         }
@@ -958,19 +942,19 @@ class WebSocketCrossServerAdapter {
             return false;
         }
        
-        let payload;
+        let packet;
 
         try {
-            // Construct the message payload
+            // Construct the message packet
             if (this.enableRedisDataCompression) {
                 // If compression is enabled, use notepack to encode
-                payload = notepack.encode(message);
+                packet = notepack.encode(message);
             } else {
                 // If not using compression, use JSON serialization
-                payload = JSON.stringify(message);
+                packet = JSON.stringify(message);
             }
             // Only publish after successful construction
-            selectedInstance.publisher.publish(channel, payload);
+            selectedInstance.publisher.publish(channel, packet);
             return true; 
         } catch (error) {
             debug(`Failed to serialize or publish message on channel "${channel}":`, error);
@@ -981,8 +965,8 @@ class WebSocketCrossServerAdapter {
      /**
      * Publish a message to target servers or handle cross-server callback and events.
      *
-     * @param {string} event - Event name. An empty string indicates a callback response.
-     * @param {Object} message - The message payload to send.
+     * @param {string} event - Event name. 
+     * @param {any} message - The message payload to send.
      * @param {Function} [callback] - Optional callback function to handle responses from target servers.
      * @param {Object} [options] - Optional configuration object.
      * @param {string|string[]} [options.targetServer=[]] - The target server(s) to send the message to. 
@@ -995,23 +979,21 @@ class WebSocketCrossServerAdapter {
      * @returns {void}
      */
     emitCrossServer(event, message, callback, options = {}) {
-
         // If cross-server functionality is not enabled, return early 
         if (!this.enableCrossServer) {
             debug("Cross-server functionality is not enabled.");
             return;
         }
 
-        // Check if data is provided
-        if (!message) {
-            debug("emitCrossServer: No data provided for the cross-server event.");
-            return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
         }
 
         // Destructure options with default values for target servers, timeout, expected response count, and self-exclusion flag
         let { targetServer = [], timeout = 5000, expectedResponses = 1, exceptSelf = false } = options;
 
-       // Ensure timeout is a positive integer, otherwise use the default value of 5000
+        // Ensure timeout is a positive integer, otherwise use the default value of 5000
         if (!Number.isInteger(timeout) || timeout <= 0) {
             timeout = 5000;
         }
@@ -1019,12 +1001,12 @@ class WebSocketCrossServerAdapter {
         // Construct initial data packet with message, event name, and sender server identifier
         let data = { event, senderServer: this.serverName };
 
-        if (message.isCallback) {
+        if (event === '_Cs_Cb_' && typeof message === 'object' && message.isCallback) {
             // If the message is a callback, merge the message data into the data object.
             data = { ...data, ...message };
         } else {
-            // If not a callback, just add the message as a property to the data object.
-            data.message = message;
+            // If not a callback, just add the message to the data payload.
+            data.payload = message;
         }
 
         // Normalize target server input
@@ -1058,18 +1040,18 @@ class WebSocketCrossServerAdapter {
         // If a callback is provided, register it with timeout handling
         if (callback && typeof callback === 'function') {
             const callbackId = this._generateCrossServerCallbackId();
-            data.callbackId = callbackId; 
+            data.callbackId = callbackId;
             this.crossServerCallback[callbackId] = {
-                callbackFunction: callback, 
-                targetServers: targets, 
-                expectedResponses, 
+                callbackFunction: callback,
+                targetServers: targets,
+                expectedResponses,
                 timeoutId: setTimeout(() => {
                     // Triggered on timeout: respond with an error payload and report unresponsive servers
                     callback({
                         success: false,
                         error: 'Cross-server callback timed out.',
                         callbackId,
-                        unrespondedCount: this.crossServerCallback[callbackId].expectedResponses 
+                        unrespondedCount: this.crossServerCallback[callbackId].expectedResponses
                     });
                     delete this.crossServerCallback[callbackId];
                 }, timeout)
@@ -1093,7 +1075,7 @@ class WebSocketCrossServerAdapter {
                         cb.callbackFunction({
                             success: true,
                             data,
-                            remainingResponses: cb.expectedResponses 
+                            remainingResponses: cb.expectedResponses
                         });
                     }
                     // Once all expected responses have been received, clear the timeout and remove the callback entry
@@ -1125,7 +1107,7 @@ class WebSocketCrossServerAdapter {
      * from the target servers. It uses a promise-based approach for cleaner async handling.
      *
      * @param {string} event - The event name to emit.
-     * @param {Object} message - The payload to send with the event.
+     * @param {any} message - The payload to send with the event.
      * @param {Object} [options] - Additional configuration options.
      * @param {string|string[]} [options.targetServer=[]] - Target server(s) to send the message to. An empty array or omitted means broadcasting to all servers.
      * @param {number} [options.timeout=5000] - Timeout in milliseconds to wait for responses before resolving with failure.
@@ -1146,12 +1128,11 @@ class WebSocketCrossServerAdapter {
                 });
             }
 
-            // Check if data is provided
-            if (!message) {
-                debug("No data provided for the cross-server event.");
-                return resolve({
+            // Ensure event is a non-empty string
+            if (!event || typeof event !== 'string') {
+                 return resolve({
                     success: false,
-                    message: 'No data provided for the cross-server event.'
+                    message: 'event must be a non-empty string'
                 });
             }
 
@@ -1164,7 +1145,7 @@ class WebSocketCrossServerAdapter {
             }
 
             // Construct initial data packet with message, event name, and sender server identifier
-            let data = { message, event, senderServer: this.serverName };
+            let data = { payload: message, event, senderServer: this.serverName };
 
             // Normalize target server input
             const targets = Array.isArray(targetServer)
@@ -1553,15 +1534,14 @@ class WebSocketCrossServerAdapter {
             throw new TypeError('roomId must be a non-empty string');
         }
 
-        // Validate essential parameters
-        if (!event || !data) {
-            debug('broadcastToRoom: Event or data missing, skipping broadcast for room:', roomNamespace, roomId);
-            return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
         }
 
         const sendMessage = JSON.stringify({
             event,
-            message: data
+            payload: data
         });
 
         // Destructure additional options
@@ -1604,6 +1584,7 @@ class WebSocketCrossServerAdapter {
         const channel = this._isWebSocketChannel(roomNamespace)
             ? roomNamespace
             : this.wsPrefix + roomNamespace;
+    
         this.publishRedisMessage(channel, {
             data: sendMessage,
             roomNamespace,
@@ -1633,18 +1614,15 @@ class WebSocketCrossServerAdapter {
             throw new TypeError('socketId must be a non-empty string');
         }
 
-        if (!event || !data) {
-            debug('toSocketId: Missing parameters: event or data');
-            return;
-        };
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
 
-        // If it's a callback, the data already contains full info 
-        let payload = data.callbackId ? data : {
-            message: data
-        };
-
-        payload.event = event;
-        const sendMessage = JSON.stringify(payload);
+        const sendMessage = JSON.stringify({
+            event,
+            payload: data
+        });
 
         // Check locally, if the connection exists, send the message directly.
         const ws = this.socketMap.get(socketId);
@@ -1661,6 +1639,7 @@ class WebSocketCrossServerAdapter {
      * Sends a message to multiple players.
      *
      * @param {Array<string>} socketIds - The list of WebSocket socketIds of players.
+     * @param {string} event - The event name to be sent.
      * @param {Object} data - The message data to be sent.
      * @returns {void}
      */
@@ -1671,15 +1650,19 @@ class WebSocketCrossServerAdapter {
             return; 
         }
 
-        // If socketIds, event, or data are missing, do nothing
-        if (!socketIds || !event || !data) {
-            debug('toSocketIds: Missing parameters: socketIds, event, or data');
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+
+        if (!Array.isArray(socketIds) || socketIds.length === 0) {
+            debug('toSocketIds: socketIds must be a non-empty array');
             return;
         }
 
         const sendMessage = JSON.stringify({
             event,
-            message: data
+            payload: data
         });
 
         // Used to store socketIds of players who cannot receive the message locally.
@@ -1711,6 +1694,7 @@ class WebSocketCrossServerAdapter {
      * If the `localOnly` flag is set to true, the message will only be broadcast locally to the connected clients.
      * If `localOnly` is false (or not provided), the message will also be published to Redis for cross-server broadcasting.
      *
+     * @param {string} event - The event name to be sent.
      * @param {Object} data - The message data to be broadcasted.
      * @param {boolean} [localOnly=false] - A flag indicating whether to broadcast only to local clients. If true, the message will not be published to Redis.
      * @returns {void}
@@ -1722,15 +1706,14 @@ class WebSocketCrossServerAdapter {
             return;
         }
 
-        // Parameter check
-        if (!event || !data) {
-            debug('broadcast: Missing parameters: event or data');
-            return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
         }
 
         const sendMessage = JSON.stringify({
             event,
-            message: data
+            payload: data
         });
 
         // Local broadcast to all connected WebSocket clients.

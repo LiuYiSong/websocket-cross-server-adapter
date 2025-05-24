@@ -123,7 +123,7 @@ wsServer.onWebSocketEvent('joinRoom', (socket, data, callback) => {
 // 模拟定时发送广播
 // Simulate sending broadcast periodically
 setInterval(() => { 
-  wsServer.broadcast('serverSay', { msg: 'I’m sending this message to everyone' });
+  wsServer.broadcast('serverSay', '999ttt');
 }, 15_000)
 
 // 模拟定时向测试房间发送消息

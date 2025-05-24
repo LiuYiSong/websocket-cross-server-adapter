@@ -672,7 +672,7 @@ const crossServer = new WebSocketCrossServerAdapter({
 
 // 注册跨服务器事件监听
 crossServer.onCrossServerEvent('say', (data, callback) => {
-  // 真实的发送数据可以通过data.message属性获取
+  
   console.log('Received "say" event from another server:', data);
  
   // 如果发送方通过 callback 或 Promise 方式发送消息，则此时 callback 为有效函数，可以直接调用以回调响应结果
@@ -1057,7 +1057,7 @@ for (let i = 0; i < totalClients; i++) {
           console.log(err)
         } else {
           console.log(`[Client ${id},port:${port}] Received joinRoom callback response:`);
-          console.log(data.message)
+          console.log(data)
         }
       })
     }

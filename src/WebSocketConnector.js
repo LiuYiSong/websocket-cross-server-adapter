@@ -260,8 +260,8 @@ class WebSocketConnector {
             let cb = this.socketCallbacks[data.callbackId];
             if (cb) {
                 // Execute the corresponding callback function
-                if (cb.callback) cb.callback(null, data);
-                if (cb.resolve) cb.resolve({ success: true, data });
+                if (cb.callback) cb.callback(null, data.payload);
+                if (cb.resolve) cb.resolve({ success: true, data: data.payload });
 
                 // Clean up timers and references
                 if (cb.timeoutId) clearTimeout(cb.timeoutId);
@@ -272,7 +272,7 @@ class WebSocketConnector {
         }
     
         // Handle event-triggered messages
-        if (data.event) this._executeListeners(data.event, data);
+        if (data.event) this._executeListeners(data.event, data.payload);
     }
 
     /**
@@ -282,7 +282,7 @@ class WebSocketConnector {
      * If the listener is set to execute only once, it is removed after execution.
      * 
      * @param {string} event - The event name to be triggered.
-     * @param {Object} data - The data to be passed to the listeners. 
+     * @param {any} data - The data to be passed to the listeners. 
      * @returns {void}
      */
     _executeListeners(event, data) {
@@ -379,7 +379,7 @@ class WebSocketConnector {
      * and the callback is registered to handle the server response.
      * 
      * @param {string} event - The event name to be sent.  
-     * @param {Object} data - The data object to be sent.  
+     * @param {any} data - The user data to be sent, can be any JSON-serializable value.   
      * @param {function} [callback] - Optional response callback function.  
      * @param {Object} [options] - Optional extra options object.  
      * @param {number} [options.callbackTimeout] - Timeout for the callback function in milliseconds.  
@@ -405,10 +405,14 @@ class WebSocketConnector {
             return;
         }
 
+        const message = {
+            event,
+            payload: data,  // User data is placed inside the payload to avoid confusion
+        }
         // If a callback is provided, generate ID and register it.
         if (callback && typeof callback === 'function') {
             const callbackId = this._generateCallbackId();
-            data.callbackId = callbackId;
+            message.callbackId = callbackId;
             this._registerSocketCallback({
                 callbackId,
                 type: 'callback',
@@ -418,10 +422,7 @@ class WebSocketConnector {
                 callbackTimeout: options.callbackTimeout || this.options.callbackTimeout,
             });
         }
-
-        // Set event and send the data.
-        data.event = event;
-        this.ws.send(JSON.stringify(data));
+        this.ws.send(JSON.stringify(message));
     }
 
     /**
@@ -432,7 +433,7 @@ class WebSocketConnector {
      * If the connection is invalid, it returns an error directly.
      * 
      * @param {string} event - The event name to be sent.
-     * @param {Object} data - The data object to be sent.
+     * @param {any} data - The user data to be sent, can be any JSON-serializable value.  
      * @param {Object} [options] - Optional configuration object.
      * @param {function} [options.onPending] - Callback to be invoked before timeout if response is pending.
      * @param {number} [options.pendingTimeout] - Timeout duration for the pending callback in milliseconds.
@@ -441,9 +442,11 @@ class WebSocketConnector {
      */
     emitWithPromise(event, data, options = {}) {
         return new Promise((resolve) => {
-            // Parameter check: Return error if event or data is missing.
-            if (!event || !data) return resolve({ success: false, error: 'No data or event provided in emitWithPromise' });
-
+            // Ensure event is a non-empty string
+            if (!event || typeof event !== 'string') {
+                return resolve({ success: false, error: 'No event provided in emitWithPromise' });
+            }
+          
             // Check if WebSocket connection is available.
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
                 return resolve({
@@ -455,7 +458,6 @@ class WebSocketConnector {
 
             // Generate callback ID and register the callback.
             const callbackId = this._generateCallbackId();
-            data.callbackId = callbackId;
             this._registerSocketCallback({
                 callbackId,
                 type: 'promise',
@@ -465,9 +467,12 @@ class WebSocketConnector {
                 callbackTimeout: options.callbackTimeout || this.options.callbackTimeout
             });
 
-            // Add event name and send data.
-            data.event = event;
-            this.ws.send(JSON.stringify(data));
+            const message = {
+                event,
+                payload: data,  // User data is placed inside the payload to avoid confusion
+                callbackId
+            }
+            this.ws.send(JSON.stringify(message));
         });
     }
 

@@ -25,11 +25,6 @@
 
 在典型游戏场景中，客户端向所在的WebSocket服务器节点发送请求，例如匹配请求。这些请求通常需要由游戏逻辑服务器（如 GameServer）处理，并将结果返回客户端。
 
-以下介绍两种常见的实现方式：
-
-#### 方案一：由 WebSocket 服务器负责回调客户端
-
-**游戏服务器处理完逻辑后，将结果返回给 WebSocket 服务器，再由 WebSocket 服务器回调客户端。**
 
 1. 客户端发起请求，如：
 
@@ -66,43 +61,6 @@ gameServer.onCrossServerEvent('matchRequest', (data, callback, clientCallback) =
 })
 
 ```
-
-#### 方案二：由 GameServer 直接回调客户端
-
-**若不希望游戏服务器回调 WebSocket 服务器，而是直接回调客户端，也可通过透传 socketId 与 callbackId 实现自动客户端回调。**
-
-改动如下：
-
-2. WebSocket 服务器转发时附带客户端回调信息
-```js
-wsServer.onWebSocketEvent('matchRequest', (socket, data, callback) => {
-
-  wsServer.emitCrossServer('matchRequest', {
-    autoClientCallback: true,// 启用自动客户端回调
-    clientSocketId: socket.socketId,// 指定客户端 socketId
-    clientCallbackId:data.callbackId,// 指定客户端回调 ID
-    data
-  }, null, {
-    targetServer: ['gameServer'],
-  })
-});
-
-```
-3. GameServer 直接使用 clientCallback 返回结果给客户端
-```js
-gameServer.onCrossServerEvent('matchRequest', (data, callback, clientCallback) => {
-  let matchResult = {};
-  // 注意，此时是使用clientCallback直接回调给客户端。
-  // 当autoClientCallback为真，并且带有clientSocketId和clientCallbackId的时候，clientCallback为有效函数，可以直接返回结果给客户端
-  if (clientCallback) { 
-    clientCallback(matchResult);
-  }
-})
-```
-#### 📝 说明：
-
-实际上，clientCallback 本质仍是通过原WebSocket服务器路由回客户端。
-但在逻辑设计上，你可以不再关心回到原WebSocket服务器，从而减少中转代码和耦合。
 
 ### 2. 服务器向客户端发送消息时支持回调吗？
 

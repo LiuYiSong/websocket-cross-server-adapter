@@ -125,7 +125,8 @@ setTimeout(async () => {
 setTimeout(() => {
   // 使用 callback 方式发送带有回调的事件
   // Send event with callback using traditional callback
-  client.emit('say', { msg: 'I am a client with ID: ' + id + ', and I need your callback.' }, (err, data) => {
+  //client.emit('say', { msg: 'I am a client with ID: ' + id + ', and I need your callback.' }, (err, data) => {
+     client.emit('say', 64567, (err, data) => {
     if (err) {
       console.log('Callback error occurred');
       console.log(err)

@@ -46,7 +46,7 @@ for (let i = 0; i < totalClients; i++) {
           console.log(err)
         } else {
           console.log(`[Client ${id},port:${port}] Received joinRoom callback response:`);
-          console.log(data.message)
+          console.log(data)
         }
       })
     }

@@ -84,6 +84,8 @@ crossServer.onCrossServerEvent('say', (data, callback) => {
   // 如果发送方通过 callback 或 Promise 方式发送消息，则此时 callback 为有效函数，可以直接调用以回调响应结果
   // If the sender uses callback or Promise to send the message, then callback is a valid function and can be called directly to respond
   if (callback) {
+    // callback({ msg: `Hi, this is server ${crossServer.getServerName()} responding to you` })
+
     callback({ msg: `Hi, this is server ${crossServer.getServerName()} responding to you` })
   }
 })
