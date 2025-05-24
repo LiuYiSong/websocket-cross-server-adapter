@@ -286,8 +286,10 @@ class WebSocketConnector {
      * @returns {void}
      */
     _executeListeners(event, data) {
-        // If no event name is provided, do nothing.
-        if (!event) return;
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
     
         const listeners = this.webSocketEventListeners[event];
         if (listeners) {
@@ -385,10 +387,12 @@ class WebSocketConnector {
      * @param {number} [options.pendingTimeout] - Timeout before triggering onPending in milliseconds.   
      * @returns {void}
      */
-    emit(event, data, callback, options = {}) {
-        // Do nothing if event or data is not provided.
-        if (!event || !data) return;
-
+    emit(event, data, callback, options = {}) {      
+        // Ensure event is a non-empty string
+        if (!event || typeof event !== 'string') {
+            throw new TypeError('event must be a non-empty string');
+        }
+        
         // Protective check: this.ws might be null during reconnecting.
         // Accessing readyState in that case would throw TypeError.
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
