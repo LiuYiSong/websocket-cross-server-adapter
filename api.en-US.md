@@ -51,11 +51,11 @@
   - [emitWithPromise(event, data, options)](#emitwithpromiseevent-data-options)
   - [reconnect(repeatReset)](#reconnectrepeatReset)
   - [reconnecting()](#reconnecting)
+  - [setPingInterval(newInterval, immediate)](#setpingintervalnewinterval-immediate)
+  - [getPingInterval()](#getpinginterval)
   - [manualClose()](#manualClose)
   - [Events](#events)
   
-
-
 
 # WebSocketCrossServerAdapter 
 
@@ -1269,6 +1269,38 @@ None
 
 ### Returns  
 - `boolean`: Returns `true` if the WebSocket is reconnecting; otherwise `false`.
+
+---
+
+## setPingInterval(interval, immediate)
+
+### Description  
+Dynamically sets the heartbeat ping interval for the WebSocket connection.  
+This allows you to adjust the ping frequency in real-time based on application context (e.g., lower frequency for idle views, higher for active interaction).
+
+If `immediate` is `true` and the connection is active, the existing heartbeat timer will be cleared and restarted immediately using the new interval.
+
+### Parameters  
+- `interval` {number}: The new ping interval in milliseconds. Must be a positive number.
+- `immediate` {boolean} (optional): Whether to apply the new interval immediately by resetting the timer. Default is `false`.
+
+### Returns  
+- `void`
+
+---
+
+## getPingInterval()
+
+### Description  
+Retrieves the currently configured interval between heartbeat pings.
+
+Useful for diagnostics, debugging, or adaptive logic that depends on the current heartbeat frequency.
+
+### Parameters  
+None
+
+### Returns  
+- `{number}`: The current ping interval in milliseconds.
 
 ---
 

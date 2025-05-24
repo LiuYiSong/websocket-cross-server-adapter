@@ -51,6 +51,8 @@
   - [emitWithPromise(event, data, options)](#emitwithpromiseevent-data-options)
   - [reconnect(repeatReset)](#reconnectrepeatReset)
   - [reconnecting()](#reconnecting)
+  - [setPingInterval(newInterval, immediate)](#setpingintervalnewinterval-immediate)
+  - [getPingInterval()](#getpinginterval)
   - [manualClose()](#manualClose)
   - [Events](#events)
 
@@ -1272,6 +1274,37 @@ adapter.emitCrossServer(
 
 ### 返回值  
 - `boolean`: 若 WebSocket 正在重连，则返回 `true`；否则返回 `false`。
+
+---
+
+## setPingInterval(interval, immediate)
+
+### 描述  
+动态设置 WebSocket 连接的心跳 ping 间隔。  
+可根据应用场景实时调整心跳频率，例如在用户停留的浏览页面中降低频率，在交互频繁的页面中提高频率。
+
+如果 `immediate` 为 `true` 且连接处于活动状态，将立即清除当前的定时器并使用新的间隔重启心跳机制。
+
+### 参数  
+- `interval` {number}: 新的 ping 间隔时间（毫秒），必须为正数。
+- `immediate` {boolean}（可选）：是否立即生效，默认为 `false`。为 `true` 时会立刻重置心跳计时器。
+
+### 返回值  
+- `void`
+
+---
+
+## getPingInterval()
+
+### 描述  
+获取当前 WebSocket 连接的心跳 ping 间隔时间（单位：毫秒）。  
+此方法用于查看当前配置的心跳周期，可用于调试或动态判断是否需要调整。
+
+### 参数  
+无
+
+### 返回值  
+- `number`: 当前配置的 ping 间隔时间（毫秒）
 
 ---
 

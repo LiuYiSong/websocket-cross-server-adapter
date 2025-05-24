@@ -152,8 +152,8 @@ class WebSocketConnector {
      */
     _onOpen(event) {
         this._executeListeners("open", event); // Execute the onopen callback function.
-        this.repeat = 0;  
-        this._heartCheck(); 
+        this.repeat = 0;
+        this._heartCheck();
     }
 
     /**
@@ -177,7 +177,7 @@ class WebSocketConnector {
         // console.log('Connection closed ===', event.code, event.reason);
     
         // Execute the registered `onclose` callback functions (if any).
-        this._executeListeners("close", event); 
+        this._executeListeners("close", event);
 
         // Developers are responsible for handling the reconnection logic based on event.code or other criteria.
         // this.reconnect(); 
@@ -199,7 +199,7 @@ class WebSocketConnector {
 
         // Attempt to reconnect after the error occurs.
         // The reconnection logic can be customized by the developer, depending on the error.
-        this.reconnect(); 
+        this.reconnect();
 
     }
 
@@ -223,17 +223,17 @@ class WebSocketConnector {
          * We are only concerned with whether the `data` field exists, not whether it is an empty string (""). 
          * This is because we might have agreements, such as a heartbeat packet being an empty string (""), and in that case, we still want to proceed with subsequent logic.
          */
-        if (!message || message.data === undefined) return; 
+        if (!message || message.data === undefined) return;
         
-        this._executeListeners("message", message.data); 
+        this._executeListeners("message", message.data);
         if (message.data === this.options.pingMsg) {
             // Handle pong response
-            let now = (new Date()).getTime(); 
-            let speed = now - this.pingGoTime; 
-            this._executeListeners("pong", speed); 
-            this._heartCheck(); 
+            let now = (new Date()).getTime();
+            let speed = now - this.pingGoTime;
+            this._executeListeners("pong", speed);
+            this._heartCheck();
         } else {
-            this._handleMessage(message.data); 
+            this._handleMessage(message.data);
         }
     }
  
@@ -249,9 +249,9 @@ class WebSocketConnector {
      */
     _handleMessage(data) {
         try {
-            data = JSON.parse(data); 
+            data = JSON.parse(data);
         } catch (err) {
-            return; 
+            return;
         }
         if (!data) return;
 
@@ -260,19 +260,19 @@ class WebSocketConnector {
             let cb = this.socketCallbacks[data.callbackId];
             if (cb) {
                 // Execute the corresponding callback function
-                if (cb.callback) cb.callback(null, data); 
-                if (cb.resolve) cb.resolve({ success: true, data }); 
+                if (cb.callback) cb.callback(null, data);
+                if (cb.resolve) cb.resolve({ success: true, data });
 
                 // Clean up timers and references
-                if (cb.timeoutId) clearTimeout(cb.timeoutId); 
-                if (cb.pendingTimer) clearTimeout(cb.pendingTimer); 
-                delete this.socketCallbacks[data.callbackId]; 
+                if (cb.timeoutId) clearTimeout(cb.timeoutId);
+                if (cb.pendingTimer) clearTimeout(cb.pendingTimer);
+                delete this.socketCallbacks[data.callbackId];
             }
             return;
         }
     
         // Handle event-triggered messages
-        if (data.event) this._executeListeners(data.event, data); 
+        if (data.event) this._executeListeners(data.event, data);
     }
 
     /**
@@ -287,18 +287,18 @@ class WebSocketConnector {
      */
     _executeListeners(event, data) {
         // If no event name is provided, do nothing.
-        if (!event) return; 
+        if (!event) return;
     
-        const listeners = this.webSocketEventListeners[event]; 
+        const listeners = this.webSocketEventListeners[event];
         if (listeners) {
             // Execute all listeners
             listeners.forEach(({ fn, once }) => {
                 try {
-                    fn(data);  
+                    fn(data);
                 } catch (err) {
-                    console.error(`[${event}] Listener execution failed:`, err); 
+                    console.error(`[${event}] Listener execution failed:`, err);
                 }
-                if (once) this.off(event, fn); 
+                if (once) this.off(event, fn);
             });
         }
     }
@@ -362,7 +362,7 @@ class WebSocketConnector {
         if (typeof listener !== 'function') {
             throw new TypeError('listener must be a function');
         }
-        
+
         const listeners = this.webSocketEventListeners[event];
         if (listeners) {
             this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listener);
@@ -395,20 +395,20 @@ class WebSocketConnector {
             if (callback && typeof callback === 'function') {
                 callback({
                     error: 'WebSocket is not open',
-                    errorCode: 'WS_NOT_OPEN',  
-                }, null); 
+                    errorCode: 'WS_NOT_OPEN',
+                }, null);
             }
             return;
         }
 
         // If a callback is provided, generate ID and register it.
-        if (callback && typeof callback === 'function'){
-            const callbackId = this._generateCallbackId(); 
+        if (callback && typeof callback === 'function') {
+            const callbackId = this._generateCallbackId();
             data.callbackId = callbackId;
             this._registerSocketCallback({
                 callbackId,
-                type: 'callback',          
-                fn: callback,              
+                type: 'callback',
+                fn: callback,
                 onPending: options.onPending,
                 pendingTimeout: options.pendingTimeout || this.options.pendingTimeout,
                 callbackTimeout: options.callbackTimeout || this.options.callbackTimeout,
@@ -417,7 +417,7 @@ class WebSocketConnector {
 
         // Set event and send the data.
         data.event = event;
-        this.ws.send(JSON.stringify(data)); 
+        this.ws.send(JSON.stringify(data));
     }
 
     /**
@@ -445,7 +445,7 @@ class WebSocketConnector {
                 return resolve({
                     success: false,
                     error: 'WebSocket is not open',
-                    errorCode: 'WS_NOT_OPEN'  
+                    errorCode: 'WS_NOT_OPEN'
                 });
             }
 
@@ -454,11 +454,11 @@ class WebSocketConnector {
             data.callbackId = callbackId;
             this._registerSocketCallback({
                 callbackId,
-                type: 'promise', 
+                type: 'promise',
                 fn: resolve,
-                onPending: options.onPending, 
-                pendingTimeout: options.pendingTimeout || this.options.pendingTimeout, 
-                callbackTimeout: options.callbackTimeout || this.options.callbackTimeout 
+                onPending: options.onPending,
+                pendingTimeout: options.pendingTimeout || this.options.pendingTimeout,
+                callbackTimeout: options.callbackTimeout || this.options.callbackTimeout
             });
 
             // Add event name and send data.
@@ -505,7 +505,7 @@ class WebSocketConnector {
                 fn({
                     error: `Is callback timeout: ${callbackId}`,
                     errorCode: 'CALLBACK_TIMEOUT'
-                }, null); 
+                }, null);
             } else if (type === 'promise') {
                 fn({
                     success: false,
@@ -513,20 +513,20 @@ class WebSocketConnector {
                     errorCode: 'CALLBACK_TIMEOUT'
                 });
             }
-            delete this.socketCallbacks[callbackId]; 
-        }, callbackTimeout); 
+            delete this.socketCallbacks[callbackId];
+        }, callbackTimeout);
 
         // If there is a pending callback and the pending timeout is less than the maximum timeout, set a pending timer.
         let pendingTimer = null;
         if (onPending && typeof onPending === 'function' && pendingTimeout < callbackTimeout) {
             pendingTimer = setTimeout(() => {
-                onPending(); 
-            }, pendingTimeout); 
+                onPending();
+            }, pendingTimeout);
         }
     
         // Store the callback, timeout ID, and pending timer in the `socketCallbacks` object.
         this.socketCallbacks[callbackId] = {
-            [type === 'callback' ? 'callback' : 'resolve']: fn, 
+            [type === 'callback' ? 'callback' : 'resolve']: fn,
             timeoutId,
             pendingTimer,
         };
@@ -598,8 +598,8 @@ class WebSocketConnector {
             this.ws = null;
         }
         // Lock the reconnection to prevent multiple reconnection timers from running simultaneously.
-        this.lockReconnect = true; 
-        this.repeat++;        
+        this.lockReconnect = true;
+        this.repeat++;
         let timeout;
         if (this.repeat <= this.options.fastReconnectThreshold) {
             // Fast reconnect strategy.
@@ -610,7 +610,7 @@ class WebSocketConnector {
             let baseTimeout = Math.pow(2, this.repeat - this.options.fastReconnectThreshold) * this.options.fastReconnectInterval;
 
             // Jitter adds random delay to avoid reconnection competition.
-            let jitter = Math.random() * this.options.fastReconnectInterval; 
+            let jitter = Math.random() * this.options.fastReconnectInterval;
 
             // Ensure the timeout does not exceed the maximum reconnect interval.
             timeout = Math.min(baseTimeout + jitter, this.options.reconnectMaxInterval);
@@ -631,8 +631,8 @@ class WebSocketConnector {
         // But it is possible to manually reconnect during the reconnection period, so a timer needs to be stored
         if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
         this.reconnectTimer = setTimeout(() => {
-            this._createWebSocket(); 
-            this.lockReconnect = false; 
+            this._createWebSocket();
+            this.lockReconnect = false;
         }, timeout)
     }
 
@@ -644,7 +644,7 @@ class WebSocketConnector {
      * @returns {boolean} Returns `true` if the WebSocket is reconnecting, otherwise `false`.
      */
     reconnecting() {
-        return this.repeat > 0; 
+        return this.repeat > 0;
     }
 
 
@@ -656,8 +656,8 @@ class WebSocketConnector {
      * @returns {void}
      */
     _heartCheck() {
-        this._heartReset(); 
-        this._heartStart(); 
+        this._heartReset();
+        this._heartStart();
     }
 
     /**
@@ -674,10 +674,10 @@ class WebSocketConnector {
         
         this.pingTimer = setTimeout(() => {
             // Send a ping message, the server will return a pong message to confirm the connection.
-            this._executeListeners("ping"); 
-            this.pingGoTime = (new Date()).getTime(); 
+            this._executeListeners("ping");
+            this.pingGoTime = (new Date()).getTime();
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send(this.options.pingMsg); 
+                this.ws.send(this.options.pingMsg);
             }
             
             // If no pong response is received within the specified time, the connection might be closed, and we handle it.
@@ -685,10 +685,10 @@ class WebSocketConnector {
                 // Trigger the listener when pong timeout occurs.
                 this._executeListeners("pong-timeout");
                 if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                    this.ws.close(4002, 'pong timeout');  
+                    this.ws.close(4002, 'pong timeout');
                 }
             }, this.options.pongTimeout);
-        }, this.options.pingInterval); 
+        }, this.options.pingInterval);
     }
 
     /**
@@ -699,8 +699,34 @@ class WebSocketConnector {
      * @returns {void}
      */
     _heartReset() {
-        if (this.pingTimer) clearTimeout(this.pingTimer); 
-        if (this.pongTimer) clearTimeout(this.pongTimer); 
+        if (this.pingTimer) clearTimeout(this.pingTimer);
+        if (this.pongTimer) clearTimeout(this.pongTimer);
+    }
+
+    /**
+     * Set the ping interval for the heartbeat mechanism.
+     * @param {number} newInterval - The new ping interval in milliseconds. Must be a positive number.
+     * @param {boolean} [immediate=false] - Whether to apply the new interval immediately by clearing the current timer.
+     *                                     If true, the heartbeat timer will be reset right away.
+     */
+    setPingInterval(newInterval, immediate = false) {
+        if (typeof newInterval !== 'number' || newInterval <= 0) {
+            throw new TypeError('pingInterval must be a positive number');
+        }
+        this.options.pingInterval = newInterval;
+        if (immediate && this.pingTimer) {
+            clearTimeout(this.pingTimer);
+            this._heartStart();
+        }
+    }
+
+    /**
+     * Get the current ping interval configuration.
+     * 
+     * @returns {number} The ping interval in milliseconds.
+     */
+    getPingInterval() {
+        return this.options.pingInterval;
     }
 
     /**
