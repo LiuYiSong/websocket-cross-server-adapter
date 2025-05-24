@@ -1257,21 +1257,6 @@ Manually starts the WebSocket reconnection process.
 
 ---
 
-## reconnecting()
-
-### Description  
-Determines whether the WebSocket is currently in the process of automatic reconnection.
-
-This method checks the internal retry count. If `repeat > 0`, it indicates that reconnection attempts are ongoing.
-
-### Parameters  
-None
-
-### Returns  
-- `boolean`: Returns `true` if the WebSocket is reconnecting; otherwise `false`.
-
----
-
 ## setPingInterval(interval, immediate)
 
 ### Description  
@@ -1301,6 +1286,21 @@ None
 
 ### Returns  
 - `{number}`: The current ping interval in milliseconds.
+
+---
+
+## reconnecting()
+
+### Description  
+Determines whether the WebSocket is currently in the process of automatic reconnection.
+
+This method checks the internal retry count. If `repeat > 0`, it indicates that reconnection attempts are ongoing.
+
+### Parameters  
+None
+
+### Returns  
+- `boolean`: Returns `true` if the WebSocket is reconnecting; otherwise `false`.
 
 ---
 
