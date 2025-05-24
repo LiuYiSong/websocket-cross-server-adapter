@@ -1277,7 +1277,7 @@ adapter.emitCrossServer(
 
 ---
 
-## setPingInterval(interval, immediate)
+## setPingInterval(newInterval, immediate)
 
 ### 描述  
 动态设置 WebSocket 连接的心跳 ping 间隔。  
@@ -1286,7 +1286,7 @@ adapter.emitCrossServer(
 如果 `immediate` 为 `true` 且连接处于活动状态，将立即清除当前的定时器并使用新的间隔重启心跳机制。
 
 ### 参数  
-- `interval` {number}: 新的 ping 间隔时间（毫秒），必须为正数。
+- `newInterval` {number}: 新的 ping 间隔时间（毫秒），必须为正数。
 - `immediate` {boolean}（可选）：是否立即生效，默认为 `false`。为 `true` 时会立刻重置心跳计时器。
 
 ### 返回值  
