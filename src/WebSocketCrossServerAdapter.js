@@ -1222,7 +1222,7 @@ class WebSocketCrossServerAdapter {
      * @returns {boolean} True if the callback existed and was removed, false otherwise
      */
     deleteCrossServerCallback(callbackId) {
-        if (callbackId && this.crossServerCallback && this.crossServerCallback[callbackId]) {
+        if (callbackId && this.crossServerCallback[callbackId]) {
             delete this.crossServerCallback[callbackId];
             return true;
         }
