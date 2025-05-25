@@ -571,7 +571,7 @@ In summary, regardless of which method is used to transmit authentication inform
 
 ### 18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?
 
-Although the WebSocket triggers a close event when the connection is closed normally, in some abnormal cases (such as device power off, network interruption, program crash, network switching like WiFi to 4G, router reboot, NAT or firewall timeout disconnections, etc.), this event may not be triggered timely or may not be triggered at all. At this point, the connection is actually disconnected, but the application layer may still mistakenly believe it is alive, causing a so-called “ghost connection” state.
+Although the WebSocket triggers a close event when the connection is closed normally, in some abnormal cases (such as device power off, network interruption, network switching like WiFi to 4G, router reboot, NAT or firewall timeout disconnections, etc.), this event may not be triggered timely or may not be triggered at all. At this point, the connection is actually disconnected, but the application layer may still mistakenly believe it is alive, causing a so-called “ghost connection” state.
 
 Therefore, we need to introduce a heartbeat mechanism: the client periodically sends a message of "Am I still alive?" (like a ping) to the server, and the server replies with a corresponding message of "You are still alive" (like a pong). If the client does not receive a response from the server within a certain time, it can determine that the connection has failed and proactively close the connection and perform reconnection or other handling.
 
@@ -581,7 +581,7 @@ In WebSocket communication, the heartbeat mechanisms on the server and client si
 
 The server uses the WebSocket protocol-level ping/pong mechanism. The server actively sends a protocol-defined ping frame (control frame) to the client, and the client automatically responds with a pong frame according to the WebSocket protocol, requiring no extra implementation by developers. This built-in standard mechanism is mainly used to handle server-side logic, helping the server detect whether the client connection is still alive and clean up invalid connections promptly to release resources.
 
-The client heartbeat mechanism is implemented at the application layer. The client periodically sends a custom “Are you still alive?” (ping) message, and the server replies with a corresponding “You are still alive” (pong) message. This mechanism must be implemented by developers in their business logic and mainly serves client-side logic, helping the client confirm whether the server is still online, thus ensuring the client can promptly detect connection issues and respond accordingly.
+The client heartbeat mechanism is implemented at the application layer. The client periodically sends a custom “Are you still alive?” (ping) message, and the server replies with a corresponding “You are still alive” (pong) message. This mechanism must be implemented by developers in their business logic and mainly serves client-side logic, helping the client confirm whether itself is still connected, thus ensuring the client can promptly detect connection issues and respond accordingly.
 
 In summary, the server’s ping/pong is an automatic mechanism at the WebSocket protocol layer mainly for the server to monitor client connection status and manage connections on the server side.
 
