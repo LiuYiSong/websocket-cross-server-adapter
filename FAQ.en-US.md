@@ -573,7 +573,7 @@ In summary, regardless of which method is used to transmit authentication inform
 
 Although the WebSocket triggers a close event when the connection is closed normally, in some abnormal cases (such as device power off, network interruption, program crash, network switching like WiFi to 4G, router reboot, NAT or firewall timeout disconnections, etc.), this event may not be triggered timely or may not be triggered at all. At this point, the connection is actually disconnected, but the application layer may still mistakenly believe it is alive, causing a so-called “ghost connection” state.
 
-Therefore, we need to introduce a heartbeat mechanism: the client periodically sends a “Are you still alive?” message (like a ping) to the server, and the server responds with a corresponding “You are still alive” message (like a pong). If the client does not receive a response from the server within a certain time, it can determine that the connection has failed and proactively close the connection and perform reconnection or other handling.
+Therefore, we need to introduce a heartbeat mechanism: the client periodically sends a custom “Am I still connected?” message (like a ping) to the server, and the server responds with a corresponding “Yes, you are still connected” message (like a pong). This mechanism helps the client confirm its own connection status. If the client does not receive a response within a certain time, it can conclude the connection has failed and proactively close it and perform reconnection or other handling.
 
 **Why do both the server and the client need their own heartbeat mechanisms?**
 
