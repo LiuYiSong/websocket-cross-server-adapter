@@ -18,6 +18,7 @@
   - [15. How to Use the WebSocketConnector Class in Frontend Environments?](#15-how-to-use-the-websocketconnector-class-in-frontend-environments)
   - [16. Can the WebSocketConnector client only pass parameters via the URL?](#16-can-the-websocketconnector-client-only-pass-parameters-via-the-url)
   - [17. How to securely and compatibly transmit authentication and other sensitive information?](#17-how-to-securely-and-compatibly-transmit-authentication-and-other-sensitive-information)
+  - [18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?](#18-why-does-websocket-still-need-a-heartbeat-mechanism-isnt-the-close-event-enough)
 
 ## FAQ
 
@@ -567,6 +568,35 @@ There are some other specialized or auxiliary methods as well:
 - **Sec-WebSocket-Protocol Header Passing:** Theoretically possible, but browser compatibility and server support are limited, making it error-prone.
 
 In summary, regardless of which method is used to transmit authentication information, it is strongly recommended to use encrypted `wss://` protocol to ensure data security, prevent man-in-the-middle attacks, and avoid leakage of sensitive information.
+
+### 18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?
+
+Although the WebSocket triggers a close event when the connection is closed normally, in some abnormal cases (such as device power off, network interruption, program crash, network switching like WiFi to 4G, router reboot, NAT or firewall timeout disconnections, etc.), this event may not be triggered timely or may not be triggered at all. At this point, the connection is actually disconnected, but the application layer may still mistakenly believe it is alive, causing a so-called “ghost connection” state.
+
+Therefore, we need to introduce a heartbeat mechanism: the client periodically sends a “Are you still alive?” message (like a ping) to the server, and the server responds with a corresponding “You are still alive” message (like a pong). If the client does not receive a response from the server within a certain time, it can determine that the connection has failed and proactively close the connection and perform reconnection or other handling.
+
+**Why do both the server and the client need their own heartbeat mechanisms?**
+
+In WebSocket communication, the heartbeat mechanisms on the server and client sides operate at different layers and have different responsibilities:
+
+The server uses the WebSocket protocol-level ping/pong mechanism. The server actively sends a protocol-defined ping frame (control frame) to the client, and the client automatically responds with a pong frame according to the WebSocket protocol, requiring no extra implementation by developers. This built-in standard mechanism is mainly used to handle server-side logic, helping the server detect whether the client connection is still alive and clean up invalid connections promptly to release resources.
+
+The client heartbeat mechanism is implemented at the application layer. The client periodically sends a custom “Are you still alive?” (ping) message, and the server replies with a corresponding “You are still alive” (pong) message. This mechanism must be implemented by developers in their business logic and mainly serves client-side logic, helping the client confirm whether the server is still online, thus ensuring the client can promptly detect connection issues and respond accordingly.
+
+In summary, the server’s ping/pong is an automatic mechanism at the WebSocket protocol layer mainly for the server to monitor client connection status and manage connections on the server side.
+
+The client heartbeat is a custom mechanism at the application layer that developers must implement, helping the client perceive its own connection status and manage connection logic on the client side.
+
+They run independently and serve their own purposes. This is why both the client and server need to implement their own heartbeat mechanisms.
+
+Reference source code:  
+Client heartbeat details can be found in the `_heartStart` method in [WebSocketConnector](src/WebSocketConnector.js).  
+Server heartbeat details can be found in the `_setupWsServer` method in [WebSocketCrossServerAdapter](src/WebSocketCrossServerAdapter.js).
+
+Sending heartbeat packets too frequently can consume additional network traffic and system resources, which is especially noticeable on mobile networks or in large-scale connection environments. Therefore, it is recommended to set the heartbeat interval reasonably according to the specific scenario to avoid excessive traffic and performance overhead while ensuring connection timeliness and stability.
+
+`WebSocketConnector` provides a `setPingInterval` method that allows dynamically adjusting the client heartbeat interval, enabling flexible configuration of heartbeat frequency according to the actual scenario, balancing connection stability and traffic consumption.
+
 
 ---
 

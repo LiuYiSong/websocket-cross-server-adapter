@@ -1246,6 +1246,7 @@ node boss
   - [15. 前端环境如何使用 WebSocketConnector 类？](FAQ.zh-CN.md#15-前端环境如何使用-websocketconnector-类)
   - [16. WebSocketConnector 客户端只能使用 URL 方式传递参数吗？](FAQ.zh-CN.md#16-websocketconnector-客户端只能使用-url-方式传递参数吗)
   - [17. 如何安全且兼容地传递认证及其他敏感信息？](FAQ.zh-CN.md#17-如何安全且兼容地传递认证及其他敏感信息)
+  - [18. 为什么 WebSocket 还需要心跳机制？是不是有 close 事件就够了？](FAQ.zh-CN.md#18-为什么-websocket-还需要心跳机制是不是有-close-事件就够了)
 
 ---
 
