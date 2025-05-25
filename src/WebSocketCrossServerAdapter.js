@@ -710,8 +710,14 @@ class WebSocketCrossServerAdapter {
         const listeners = this.webSocketEventListeners[message.event];
         if (!listeners) return;
 
+        // Validate callbackId: must be a non-empty string with acceptable length
+        const isCallback =
+            typeof message.callbackId === 'string' &&
+            message.callbackId.length > 0 &&
+            message.callbackId.length <= 64;
+        
         // Handle callback-based listeners
-        const sendCallback = message.callbackId
+        const sendCallback = isCallback
             ? (data) => {
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
@@ -966,7 +972,7 @@ class WebSocketCrossServerAdapter {
      * Publish a message to target servers or handle cross-server callback and events.
      *
      * @param {string} event - Event name. 
-     * @param {any} message - The message payload to send.
+     * @param {any} message - The message payload to send. Must not be null or undefined.
      * @param {Function} [callback] - Optional callback function to handle responses from target servers.
      * @param {Object} [options] - Optional configuration object.
      * @param {string|string[]} [options.targetServer=[]] - The target server(s) to send the message to. 
@@ -988,6 +994,11 @@ class WebSocketCrossServerAdapter {
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
+        }
+
+        // Parameter validation: message must not be null or undefined
+        if (message === null || message === undefined) {
+            throw new Error('emitCrossServer: message cannot be null or undefined');
         }
 
         // Destructure options with default values for target servers, timeout, expected response count, and self-exclusion flag
@@ -1107,7 +1118,7 @@ class WebSocketCrossServerAdapter {
      * from the target servers. It uses a promise-based approach for cleaner async handling.
      *
      * @param {string} event - The event name to emit.
-     * @param {any} message - The payload to send with the event.
+     * @param {any} message - The message payload to send. Must not be null or undefined.
      * @param {Object} [options] - Additional configuration options.
      * @param {string|string[]} [options.targetServer=[]] - Target server(s) to send the message to. An empty array or omitted means broadcasting to all servers.
      * @param {number} [options.timeout=5000] - Timeout in milliseconds to wait for responses before resolving with failure.
@@ -1130,9 +1141,17 @@ class WebSocketCrossServerAdapter {
 
             // Ensure event is a non-empty string
             if (!event || typeof event !== 'string') {
-                 return resolve({
+                return resolve({
                     success: false,
                     message: 'event must be a non-empty string'
+                });
+            }
+
+            // Parameter validation: message must not be null or undefined
+            if (message === null || message === undefined) {
+                return resolve({
+                    success: false,
+                    message: 'emitCrossServer: message cannot be null or undefined'
                 });
             }
 

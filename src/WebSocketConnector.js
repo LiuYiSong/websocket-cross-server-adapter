@@ -173,7 +173,6 @@ class WebSocketConnector {
      * @returns {void}
      */
     _onClose(event) {
-        // Log information about the connection closure, such as the code and reason (optional).
         // console.log('Connection closed ===', event.code, event.reason);
     
         // Execute the registered `onclose` callback functions (if any).
@@ -379,7 +378,7 @@ class WebSocketConnector {
      * and the callback is registered to handle the server response.
      * 
      * @param {string} event - The event name to be sent.  
-     * @param {any} data - The user data to be sent, can be any JSON-serializable value.   
+     * @param {any} data - The data payload to send. Must not be null or undefined. 
      * @param {function} [callback] - Optional response callback function.  
      * @param {Object} [options] - Optional extra options object.  
      * @param {number} [options.callbackTimeout] - Timeout for the callback function in milliseconds.  
@@ -392,7 +391,12 @@ class WebSocketConnector {
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
         }
-        
+
+        // Parameter validation: data must not be null or undefined
+        if (data === null || data === undefined) {
+            throw new Error('emit: data cannot be null or undefined');
+        }
+
         // Protective check: this.ws might be null during reconnecting.
         // Accessing readyState in that case would throw TypeError.
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -433,7 +437,7 @@ class WebSocketConnector {
      * If the connection is invalid, it returns an error directly.
      * 
      * @param {string} event - The event name to be sent.
-     * @param {any} data - The user data to be sent, can be any JSON-serializable value.  
+     * @param {any} data - The data payload to send. Must not be null or undefined. 
      * @param {Object} [options] - Optional configuration object.
      * @param {function} [options.onPending] - Callback to be invoked before timeout if response is pending.
      * @param {number} [options.pendingTimeout] - Timeout duration for the pending callback in milliseconds.
@@ -445,6 +449,12 @@ class WebSocketConnector {
             // Ensure event is a non-empty string
             if (!event || typeof event !== 'string') {
                 return resolve({ success: false, error: 'No event provided in emitWithPromise' });
+            }
+
+            // Parameter validation: data must not be null or undefined
+            if (data === null || data === undefined) {
+            
+                return resolve({ success: false, error: 'Data cannot be null or undefined' });
             }
           
             // Check if WebSocket connection is available.
