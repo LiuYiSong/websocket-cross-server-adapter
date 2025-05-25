@@ -19,6 +19,8 @@
   - [16. Can the WebSocketConnector client only pass parameters via the URL?](#16-can-the-websocketconnector-client-only-pass-parameters-via-the-url)
   - [17. How to securely and compatibly transmit authentication and other sensitive information?](#17-how-to-securely-and-compatibly-transmit-authentication-and-other-sensitive-information)
   - [18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?](#18-why-does-websocket-still-need-a-heartbeat-mechanism-isnt-the-close-event-enough)
+  - [19. How to Deploy a Node.js Service? Any Recommended Methods?](#19-how-to-deploy-a-nodejs-service-any-recommended-methods)
+
 
 ## FAQ
 
@@ -575,9 +577,11 @@ Although the WebSocket triggers a close event when the connection is closed norm
 
 Therefore, we need to introduce a heartbeat mechanism: the client periodically sends a message of "Am I still alive?" (like a ping) to the server, and the server replies with a corresponding message of "You are still alive" (like a pong). If the client does not receive a response from the server within a certain time, it can determine that the connection has failed and proactively close the connection and perform reconnection or other handling.
 
+Seeing through the phenomenon to the essence: the network environment is ever-changing, and many abnormal situations may cause the connection to be actually broken while the application layer remains unaware, leading to a "false online" state. Therefore, the only reliable way to determine whether a connection is truly alive is to see whether the message sent by the client can be received by the server and responded to in time. The essence of the heartbeat mechanism is to simulate this message sending and receiving process. Once you understand this, you truly understand the purpose of heartbeats.
+
 **Why do both the server and the client need their own heartbeat mechanisms?**
 
-In WebSocket communication, the heartbeat mechanisms on the server and client sides operate at different layers and have different responsibilities:
+As mentioned earlier, in a complex network environment, the server likewise cannot actively detect whether each client is still alive. Therefore, it also needs to send heartbeat messages and determine the client's status based on their responses, in order to handle the server-side connection management logic.
 
 The server uses the WebSocket protocol-level ping/pong mechanism. The server actively sends a protocol-defined ping frame (control frame) to the client, and the client automatically responds with a pong frame according to the WebSocket protocol, requiring no extra implementation by developers. This built-in standard mechanism is mainly used to handle server-side logic, helping the server detect whether the client connection is still alive and clean up invalid connections promptly to release resources.
 
@@ -597,6 +601,19 @@ Sending heartbeat packets too frequently can consume additional network traffic 
 
 `WebSocketConnector` provides a `setPingInterval` method that allows dynamically adjusting the client heartbeat interval, enabling flexible configuration of heartbeat frequency according to the actual scenario, balancing connection stability and traffic consumption.
 
+### 19. How to Deploy a Node.js Service? Any Recommended Methods?
+
+During development, we can start a service directly from the command line using `node filename`, or use the [`concurrently`](https://www.npmjs.com/package/concurrently) tool to launch multiple services simultaneously in one terminal, which is very convenient for front-end and back-end joint debugging.
+
+However, in actual deployment scenarios, we typically use a headless mode and manage Node.js services with [PM2](https://pm2.keymetrics.io/). PM2 is excellent at monitoring Node.js processes, automatically restarting the service if it crashes unexpectedly. It also supports log management, process status monitoring, resource usage tracking, and auto-start on system boot, making it a widely used tool for deploying Node.js projects in production environments.
+
+Using PM2 significantly improves service stability and maintainability, and it facilitates unified management of multiple services. It also supports managing multiple processes through configuration files, which is suitable for medium to large scale projects.
+
+For more details and configuration instructions, please refer to:
+
+- [PM2 Official Website](https://pm2.keymetrics.io/)
+- [GitHub Repository](https://github.com/Unitech/pm2)
+- [PM2 CLI Documentation](https://pm2.keymetrics.io/docs/usage/pm2-cli/)
 
 ---
 
