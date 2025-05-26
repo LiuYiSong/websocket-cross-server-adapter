@@ -18,7 +18,7 @@
   - [getHealthyRedisInstancesCount(type)](#gethealthyredisinstancescounttype)
   - [getRedisInstancesCount()](#getredisinstancescount)
   - [onWebSocketEvent(event, listener, tag)](#onwebsocketeventevent-listener-tag)
-   - [System WebSocket Events](#system-websocket-events)
+  - [System WebSocket Events](#system-websocket-events)
   - [onceWebSocketEvent(event, listener, tag)](#oncewebsocketeventevent-listener-tag)
   - [offWebSocketEvent(event, listenerOrTag)](#offwebsocketeventevent-listenerortag)
   - [broadcastToRoom(roomNamespace, roomId, event, data, options)](#broadcasttoroomroomnamespace-roomid-event-data-options)

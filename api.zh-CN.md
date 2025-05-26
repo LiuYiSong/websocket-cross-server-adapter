@@ -18,7 +18,7 @@
   - [getHealthyRedisInstancesCount(type)](#gethealthyredisinstancescounttype)
   - [getRedisInstancesCount()](#getredisinstancescount)
   - [onWebSocketEvent(event, listener, tag)](#onwebsocketeventevent-listener-tag)
-    - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
+     - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
   - [onceWebSocketEvent(event, listener, tag)](#oncewebsocketeventevent-listener-tag)
   - [offWebSocketEvent(event, listenerOrTag)](#offwebsocketeventevent-listenerortag)
   - [broadcastToRoom(roomNamespace, roomId, event, data, options)](#broadcasttoroomroomnamespace-roomid-event-data-options)
