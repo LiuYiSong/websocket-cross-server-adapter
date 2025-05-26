@@ -855,13 +855,14 @@ class WebSocketCrossServerAdapter {
     }
 
     /**
-     * Add a regular event listener to handle events sent from other servers
+     * Adds a regular event listener to handle events sent from other servers.
      * 
-     * @param {string} event - Event name
-     * @param {Function} listener - Event handler function
+     * @param {string} event - Event name (string or number).
+     * @param {Function} listener - Event handler function.
+     * @param {string|number} [tag] - (Optional) A custom tag (string or number) to identify the listener for future removal.
      * @returns {void}
      */
-    onCrossServerEvent(event, listener) {
+    onCrossServerEvent(event, listener, tag) {
         if (!this.enableCrossServer) return;
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
@@ -873,17 +874,18 @@ class WebSocketCrossServerAdapter {
             throw new TypeError('listener must be a function');
         }
         if (!this.crossServerEventListeners[event]) this.crossServerEventListeners[event] = [];
-        this.crossServerEventListeners[event].push({ fn: listener, once: false });
+        this.crossServerEventListeners[event].push({ fn: listener, once: false, tag });
     }
 
     /**
-     * Add a one-time event listener to handle events sent from other servers, triggered only once
+     * Adds a one-time event listener to handle events sent from other servers, triggered only once.
      * 
-     * @param {string} event - Event name
-     * @param {Function} listener - Event handler function
+     * @param {string} event - Event name (string or number).
+     * @param {Function} listener - Event handler function.
+     * @param {string|number} [tag] - (Optional) A custom tag (string or number) to identify the listener for future removal.
      * @returns {void}
      */
-    onceCrossServerEvent(event, listener) {
+    onceCrossServerEvent(event, listener, tag) {
         if (!this.enableCrossServer) return;
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
@@ -895,28 +897,35 @@ class WebSocketCrossServerAdapter {
             throw new TypeError('listener must be a function');
         }
         if (!this.crossServerEventListeners[event]) this.crossServerEventListeners[event] = [];
-        this.crossServerEventListeners[event].push({ fn: listener, once: true });
+        this.crossServerEventListeners[event].push({ fn: listener, once: true, tag });
     }
 
     /**
-     * Removes a listener for a cross-server event.
+     * Removes a listener for a cross-server event, supports removal by function or tag.
      * 
      * @param {string} event - The event name to identify the event to remove the listener from.
-     * @param {Function} listener - The listener function to be removed.
+     * @param {function|string|number} [listenerOrTag] - Optional. If a function, removes the specific listener.
+     *  If a string or number, removes all listeners with the matching tag. If omitted, removes all listeners for the event.
+     * @returns {void}
      */
-    offCrossServerEvent(event, listener) {
+    offCrossServerEvent(event, listenerOrTag) {
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
         }
 
-        // Ensure listener is a function
-        if (typeof listener !== 'function') {
-            throw new TypeError('listener must be a function');
-        }
         const listeners = this.crossServerEventListeners[event];
-        if (listeners) {
-            this.crossServerEventListeners[event] = listeners.filter(item => item.fn !== listener);
+        if (!listeners) return;
+
+        if (listenerOrTag === undefined) {
+            // Remove all listeners for the event
+            delete this.crossServerEventListeners[event];
+        } else if (typeof listenerOrTag === 'function') {
+            // Remove specific listener function
+            this.crossServerEventListeners[event] = listeners.filter(item => item.fn !== listenerOrTag);
+        } else {
+            // Remove listeners by tag
+            this.crossServerEventListeners[event] = listeners.filter(item => item.tag !== listenerOrTag);
         }
     }
 
@@ -1429,93 +1438,91 @@ class WebSocketCrossServerAdapter {
 
     /**
      * Registers a listener for a specific WebSocket event.
-     * 
+     *
      * @param {string} event - The name of the event to listen for.
      * @param {Function} listener - The callback function to be invoked when the event is triggered.
+     * @param {string|number} [tag] - Optional tag to identify the listener for easier removal.
      * @returns {void}
      */
-    onWebSocketEvent(event, listener) {
-        // If WebSocket service is disabled, skip !
+    onWebSocketEvent(event, listener, tag) {
+        // If WebSocket service is disabled, skip!
         if (!this.enableWebSocket) {
             debug('WebSocket service is disabled, skipping event registration for:', event);
             return;
         }
 
-        // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
-            throw new TypeError('event must be a non-empty string');
+            throw new TypeError('event must be a non-empty string or number');
         }
 
-        // Ensure listener is a function
         if (typeof listener !== 'function') {
             throw new TypeError('listener must be a function');
         }
 
-        // If there is no array of listeners for the event, initialize it.
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
 
-        // Add the new listener to the array of listeners for the event
-        this.webSocketEventListeners[event].push({ fn: listener, once: false });
+        this.webSocketEventListeners[event].push({ fn: listener, once: false, tag });
     }
 
     /**
      * Registers a listener that will only be triggered once for a specific WebSocket event.
-     * 
+     *
      * @param {string} event - The name of the event to listen for.
      * @param {Function} listener - The callback function to be invoked when the event is triggered.
+     * @param {string|number} [tag] - Optional tag to identify the listener for easier removal.
      * @returns {void}
      */
-    onceWebSocketEvent(event, listener) {
-        // If WebSocket service is disabled, skip !
+    onceWebSocketEvent(event, listener, tag) {
+        // If WebSocket service is disabled, skip!
         if (!this.enableWebSocket) {
             debug('WebSocket service is disabled, skipping event registration for:', event);
             return;
         }
 
-        // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
-            throw new TypeError('event must be a non-empty string');
+            throw new TypeError('event must be a non-empty string or number');
         }
 
-        // Ensure listener is a function
         if (typeof listener !== 'function') {
             throw new TypeError('listener must be a function');
         }
 
-        // If there is no array of listeners for the event, initialize it.
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
 
-        // Add the new listener to the array of listeners for the event and set 'once' to true, meaning the listener will be triggered only once.
-        this.webSocketEventListeners[event].push({ fn: listener, once: true });
+        this.webSocketEventListeners[event].push({ fn: listener, once: true, tag });
     }
 
     /**
      * Removes a listener from a specific WebSocket event.
-     * 
-     * @param {string} event - The name of the event for which the listener should be removed.
-     * @param {Function} listener - The listener function to be removed.
+     *
+     * @param {string|number} event - The name of the event for which the listener should be removed.
+     * @param {function|string|number} [listenerOrTag] - Optional. If a function, removes the specific listener.
+     *  If a string or number, removes all listeners with the matching tag. If omitted, removes all listeners for the event.
      * @returns {void}
      */
-    offWebSocketEvent(event, listener) {
-        // If WebSocket service is disabled, skip !
+    offWebSocketEvent(event, listenerOrTag) {
+        // If WebSocket service is disabled, skip!
         if (!this.enableWebSocket) {
-            debug('WebSocket service is disabled, skipping event registration for:', event);
+            debug('WebSocket service is disabled, skipping event deregistration for:', event);
             return;
         }
 
-        // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
-            throw new TypeError('event must be a non-empty string');
+            throw new TypeError('event must be a non-empty string or number');
         }
 
-        // Ensure listener is a function
-        if (typeof listener !== 'function') {
-            throw new TypeError('listener must be a function');
-        }
         const listeners = this.webSocketEventListeners[event];
-        if (listeners) {
-            // Filter out the listener to be removed
-            this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listener);
+        if (!listeners) return;
+
+        if (listenerOrTag === undefined) {
+            // Remove all listeners for the event
+            delete this.webSocketEventListeners[event];
+        } else if (typeof listenerOrTag === 'function') {
+            // Remove specific listener function
+            this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listenerOrTag);
+        } else {
+            // Remove listeners by tag
+            this.webSocketEventListeners[event] = listeners.filter(item => item.tag !== listenerOrTag);
         }
     }
 

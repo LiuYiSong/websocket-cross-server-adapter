@@ -309,9 +309,10 @@ class WebSocketConnector {
      *
      * @param {string} event - The name of the event to listen for.
      * @param {function} listener - The callback function to be executed when the event is triggered.
+     * @param {string|number} [tag] - (Optional) A custom tag (string or number) to identify the listener for future removal.
      * @returns {void}
      */
-    on(event, listener) {
+    on(event, listener, tag) {
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
@@ -322,7 +323,11 @@ class WebSocketConnector {
             throw new TypeError('listener must be a function');
         }
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
-        this.webSocketEventListeners[event].push({ fn: listener, once: false });
+        this.webSocketEventListeners[event].push({
+            fn: listener,
+            once: false,
+            tag
+        });
     }
 
     /**
@@ -330,9 +335,10 @@ class WebSocketConnector {
      *
      * @param {string} event - The name of the event to listen for.
      * @param {function} listener - The callback function to be executed when the event is triggered.
+     * @param {string|number} [tag] - (Optional) A custom tag (string or number) to identify the listener for future removal.
      * @returns {void}
      */
-    once(event, listener) {
+    once(event, listener, tag) {
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
@@ -343,30 +349,35 @@ class WebSocketConnector {
             throw new TypeError('listener must be a function');
         }
         if (!this.webSocketEventListeners[event]) this.webSocketEventListeners[event] = [];
-        this.webSocketEventListeners[event].push({ fn: listener, once: true });
+        this.webSocketEventListeners[event].push({
+            fn: listener,
+            once: true,
+            tag
+        });
     }
 
     /**
      * Removes an event listener function and unregisters it for that event.
      *
      * @param {string} event - The name of the event to remove the listener for.
-     * @param {function} listener - The callback function to be removed.
+     * @param {function|string|number} [listenerOrTag] - Optional. If a function, removes the specific listener. If a string or number, removes all listeners with the matching tag. If omitted, removes all listeners for the event.
      * @returns {void}
      */
-    off(event, listener) {
+    off(event, listenerOrTag) {
         // Ensure event is a non-empty string
         if (!event || typeof event !== 'string') {
             throw new TypeError('event must be a non-empty string');
         }
 
-        // Ensure listener is a function
-        if (typeof listener !== 'function') {
-            throw new TypeError('listener must be a function');
-        }
-
         const listeners = this.webSocketEventListeners[event];
-        if (listeners) {
-            this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listener);
+        if (!listeners) return;
+
+        if (listenerOrTag === undefined) {
+            delete this.webSocketEventListeners[event];
+        } else if (typeof listenerOrTag === 'function') {
+            this.webSocketEventListeners[event] = listeners.filter(item => item.fn !== listenerOrTag);
+        } else {
+            this.webSocketEventListeners[event] = listeners.filter(item => item.tag !== listenerOrTag);
         }
     }
 
@@ -595,12 +606,6 @@ class WebSocketConnector {
 
         // If the current WebSocket instance exists, close it first
         if (this.ws) {
-            // Unbind all WebSocket event listeners.
-            // Unbinding events like onopen/onmessage/onerror/onclose prevents callbacks from firing after the connection is closed,
-            // avoiding memory leaks or unexpected behavior.
-            ['onopen', 'onmessage', 'onerror', 'onclose'].forEach(event => {
-                this.ws[event] = null;
-            });
 
             // Check the current connection state and safely close the WebSocket.
             // Only call close() when the connection state is CONNECTING or OPEN to avoid exceptions when closing an already closed or closing connection.
@@ -608,6 +613,13 @@ class WebSocketConnector {
                 // Use a custom close code (recommended range: 4000–4999) and reason string when manually closing the connection
                 this.ws.close(4001, 'client manual close');
             }
+
+            // Unbind all WebSocket event listeners.
+            // Unbinding events like onopen/onmessage/onerror/onclose prevents callbacks from firing after the connection is closed,
+            // avoiding memory leaks or unexpected behavior.
+            ['onopen', 'onmessage', 'onerror', 'onclose'].forEach(event => {
+                this.ws[event] = null;
+            });
 
             // Manually set this.ws to null.
             // After closing the WebSocket connection, explicitly set this.ws to null.
@@ -767,16 +779,17 @@ class WebSocketConnector {
         if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
 
         if (this.ws) {
-            // Explicitly remove all event listeners to help accelerate garbage collection.
-            ['onopen', 'onmessage', 'onerror', 'onclose'].forEach(event => {
-                this.ws[event] = null;
-            });
-
+           
             // Only call close if the connection is in CONNECTING or OPEN state.
             if ([WebSocket.CONNECTING, WebSocket.OPEN].includes(this.ws.readyState)) {
                 // Use a custom close code (recommended range: 4000–4999) and reason string when manually closing the connection
                 this.ws.close(4001, 'client manual close');
             }
+
+             // Explicitly remove all event listeners to help accelerate garbage collection.
+            ['onopen', 'onmessage', 'onerror', 'onclose'].forEach(event => {
+                this.ws[event] = null;
+            });
 
             // Release the ws reference to ensure complete disconnection and memory cleanup.
             this.ws = null;

@@ -3,9 +3,9 @@
 
 - [WebSocketCrossServerAdapter](#websocketcrossserveradapter)
   - [Constructor(options)](#constructoroptions)
-  - [onCrossServerEvent(event, listener)](#oncrossservereventevent-listener)
-  - [onceCrossServerEvent(event, listener)](#oncecrossservereventevent-listener)
-  - [offCrossServerEvent(event, listener)](#offcrossservereventevent-listener)
+  - [onCrossServerEvent(event, listener, tag)](#oncrossserverevent-event-listener-tag)
+  - [onceCrossServerEvent(event, listener, tag)](#oncecrossserverevent-event-listener-tag)
+  - [offCrossServerEvent(event, listenerOrTag)](#offcrossserverevent-event-listenerortag)
   - [publishRedisMessage(channel, message)](#publishredismessagechannel-message)
   - [emitCrossServer(event, message, callback, options)](#emitcrossserverevent-message-callback-options)
   - [emitCrossServerWithPromise(event, message, options)](#emitcrossserverwithpromiseevent-message-options)
@@ -17,10 +17,10 @@
   - [addRedisInstance(config)](#addredisinstanceconfig)
   - [getHealthyRedisInstancesCount(type)](#gethealthyredisinstancescounttype)
   - [getRedisInstancesCount()](#getredisinstancescount)
-  - [onWebSocketEvent(event, listener)](#onwebsocketeventevent-listener)
-    - [System WebSocket Events](#system-websocket-events)
-  - [onceWebSocketEvent(event, listener)](#oncewebsocketeventevent-listener)
-  - [offWebSocketEvent(event, listener)](#offwebsocketeventevent-listener)
+  - [onWebSocketEvent(event, listener, tag)](#onwebsocketeventevent-listener-tag)
+   - [System WebSocket Events](#system-websocket-events)
+  - [onceWebSocketEvent(event, listener, tag)](#oncewebsocketeventevent-listener-tag)
+  - [offWebSocketEvent(event, listenerOrTag)](#offwebsocketeventevent-listenerortag)
   - [broadcastToRoom(roomNamespace, roomId, event, data, options)](#broadcasttoroomroomnamespace-roomid-event-data-options)
   - [toSocketId(socketId, event, data)](#tosocketidsocketid-event-data)
   - [toSocketIds(socketIds, event, data)](#tosocketidssocketids-event-data)
@@ -44,9 +44,9 @@
 
 - [WebSocketConnector](#websocketconnector)
   - [constructor(options)](#constructoroptions-1)
-  - [on(event, listener)](#onevent-listener)
-  - [once(event, listener)](#onceevent-listener)
-  - [off(event, listener)](#offevent-listener)
+  - [on(event, listener, tag)](#onevent-listener-tag)
+  - [once(event, listener, tag)](#onceevent-listener-tag)
+  - [off(event, listenerOrTag)](#offevent-listenerortag)
   - [emit(event, data, callback, options)](#emitevent-data-callback-options)
   - [emitWithPromise(event, data, options)](#emitwithpromiseevent-data-options)
   - [reconnect(repeatReset)](#reconnectrepeatReset)
@@ -168,7 +168,7 @@ The constructor for `WebSocketCrossServerAdapter`. This is used to initialize a 
 
 ---
 
-## onCrossServerEvent(event, listener)
+## onCrossServerEvent(event, listener, tag)
 
 ### Description  
 Registers a **cross-server event listener** to handle events broadcasted from other server nodes.
@@ -182,22 +182,15 @@ Each time a remote server emits the event, all local listeners for that event wi
 
 - `event` `{string}`: Name of the cross-server event to listen for.
 - `listener` `{Function}`: Event handler function that will be invoked with the broadcasted data.
+- `tag` `{string|number}` [optional]: A custom tag to identify the listener for future removal.
 
 ### Returns
 
 - `void`
 
-### Example
-
-  ```js
-  adapter.onCrossServerEvent("server-reload", (data) => {
-      console.log("Received reload command from another server:", data);
-  });
-  ```
-
 ---
 
-## onceCrossServerEvent(event, listener)
+## onceCrossServerEvent(event, listener, tag)
 
 ### Description  
 Registers a **one-time cross-server event listener** that handles an event sent from other servers.  
@@ -209,38 +202,31 @@ The listener will be automatically removed after it is triggered once.
 
 - `event` `{string}`: The name of the cross-server event to listen for.
 - `listener` `{Function}`: The handler function to be called once when the event occurs.
+- `tag` `{string|number}` [optional]: A custom tag to identify the listener for future removal.
 
 ### Returns
 
 - `void`
 
-### Example
-
-```js
-adapter.onceCrossServerEvent("cluster-ready", (data) => {
-    console.log("Handling cluster-ready only once:", data);
-});
-```
-
 ---
 
-## offCrossServerEvent(event, listener)
+## offCrossServerEvent(event, listenerOrTag)
 
 ### Description
 
-Removes a specific listener for a cross-server event.
+Removes listeners for a cross-server event.  
+- If `listenerOrTag` is a function, removes the matching listener function.  
+- If `listenerOrTag` is a string or number, removes listeners with the matching tag.  
+- If `listenerOrTag` is not provided, removes all listeners for the event.
 
 ### Parameters
 
-- `event` `{string}`: The name of the event to remove the listener from.
-- `listener` `{Function}`: The event handler function that was previously registered and should now be removed.
+- `event` `{string}`: The name of the event to remove listeners from.
+- `listenerOrTag` `{Function|string|number}` [optional]: The listener function or tag to remove.
 
-### Details
+### Returns
 
-This method removes a specific listener function for a given cross-server event.  
-If the function is not found, nothing happens.  
-It is useful when you want to stop listening to a previously registered event  
-(via `onCrossServerEvent` or `onceCrossServerEvent`), helping prevent memory leaks or unwanted repeated invocations.
+- `void`
 
 ---
 
@@ -616,10 +602,10 @@ None
 
 ---
 
-## onWebSocketEvent(event, listener)
+## onWebSocketEvent(event, listener, tag)
 
 ### Description
-Registers a listener for a specific WebSocket event.
+Registers a listener for a specific WebSocket event.  
 You can register handlers for the built-in system events to process system-level WebSocket events:
 
 ### System WebSocket Events
@@ -634,48 +620,41 @@ You can register handlers for the built-in system events to process system-level
 - `ws-server-close`: Triggered when the WebSocket server closes.
 
 ### Parameters
-- event: The name of the event to listen for.
-- listener: The callback function to be invoked when the event is triggered.
+- `event` {string|number} — The name of the event to listen for.
+- `listener` {Function} — The callback function to be invoked when the event is triggered.
+- `tag` {string|number} [optional] — A custom tag to identify the listener for future removal.
 
 ### Returns
 - void
 
-### Example
-
-  ```js
-  // Handle 'say' event from client and respond via callback
-  adapter.onWebSocketEvent('say', (socket, data, callback) => {
-    console.log(data)
-    if (callback) {
-      callback({ msg: 'This is a callback response for "say"' })
-    }
-  })
-  ```
-
 ---
 
-## onceWebSocketEvent(event, listener)
+## onceWebSocketEvent(event, listener, tag)
 
 ### Description
 Registers a listener that will only be triggered once for a specific WebSocket event.
 
 ### Parameters
-- event: The name of the event to listen for.
-- listener: The callback function to be invoked when the event is triggered.
+- `event` {string|number} — The name of the event to listen for.
+- `listener` {Function} — The callback function to be invoked when the event is triggered.
+- `tag` {string|number} [optional] — A custom tag to identify the listener for future removal.
 
 ### Returns
 - void
 
 ---
 
-## offWebSocketEvent(event, listener)
+## offWebSocketEvent(event, listenerOrTag)
 
 ### Description
-Removes a listener from a specific WebSocket event.
+Removes a listener from a specific WebSocket event.  
+- If `listenerOrTag` is a function, removes the corresponding listener function.  
+- If it is a string or number, removes listeners matching that tag.  
+- If omitted, removes all listeners for the event.
 
 ### Parameters
-- event: The name of the event for which the listener should be removed.
-- listener: The listener function to be removed.
+- `event` {string|number} — The name of the event to remove listeners from.
+- `listenerOrTag` {Function|string|number} [optional] — The listener function or tag to remove. If omitted, all listeners for the event will be removed.
 
 ### Returns
 - void
@@ -1082,42 +1061,48 @@ Initialize the WebSocket client instance with custom configuration options.
   ```
 ---
 
-## on(event, listener)
+## on(event, listener, tag)
 
 ### Description  
 Registers an event listener that will be executed whenever the specified event is triggered.
 
 ### Parameters  
 - event {string}: Name of the event to listen for  
-- listener {function}: Callback function to execute when the event is triggered
+- listener {function}: Callback function to execute when the event is triggered  
+- tag {string|number} [optional]: A custom tag to identify the listener for future removal
 
 ## Returns
 - `void`
 
 ---
 
-## once(event, listener)
+## once(event, listener, tag)
 
 ### Description  
 Registers a one-time event listener that will be triggered only once and then automatically removed.
 
 ### Parameters  
 - event {string}: Name of the event to listen for  
-- listener {function}: Callback function to execute once when the event is triggered
+- listener {function}: Callback function to execute once when the event is triggered  
+- tag {string|number} [optional]: A custom tag to identify the listener for future removal
 
 ## Returns
 - `void`
 
 ---
 
-## off(event, listener)
+## off(event, listenerOrTag)
 
 ### Description  
-Removes a previously registered event listener for a given event.
+Removes previously registered event listeners for a given event.
+
+- If `listenerOrTag` is a function, removes the matching listener function.  
+- If `listenerOrTag` is a string or number, removes listeners with the matching tag.  
+- If `listenerOrTag` is not provided, removes all listeners for the event.
 
 ### Parameters  
-- event {string}: Name of the event whose listener should be removed  
-- listener {function}: The listener function to remove
+- event {string}: Name of the event whose listener(s) should be removed  
+- listenerOrTag {function|string|number} [optional]: The listener function or tag to remove
 
 ## Returns
 - `void`

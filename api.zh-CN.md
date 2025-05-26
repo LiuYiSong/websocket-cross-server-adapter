@@ -3,9 +3,9 @@
 
 - [WebSocketCrossServerAdapter](#websocketcrossserveradapter)
   - [Constructor(options)](#constructoroptions)
-  - [onCrossServerEvent(event, listener)](#oncrossservereventevent-listener)
-  - [onceCrossServerEvent(event, listener)](#oncecrossservereventevent-listener)
-  - [offCrossServerEvent(event, listener)](#offcrossservereventevent-listener)
+  - [onCrossServerEvent(event, listener, tag)](#oncrossserverevent-event-listener-tag)
+  - [onceCrossServerEvent(event, listener, tag)](#oncecrossserverevent-event-listener-tag)
+  - [offCrossServerEvent(event, listenerOrTag)](#offcrossserverevent-event-listenerortag)
   - [publishRedisMessage(channel, message)](#publishredismessagechannel-message)
   - [emitCrossServer(event, message, callback, options)](#emitcrossserverevent-message-callback-options)
   - [emitCrossServerWithPromise(event, message, options)](#emitcrossserverwithpromiseevent-message-options)
@@ -17,10 +17,10 @@
   - [addRedisInstance(config)](#addredisinstanceconfig)
   - [getHealthyRedisInstancesCount(type)](#gethealthyredisinstancescounttype)
   - [getRedisInstancesCount()](#getredisinstancescount)
-  - [onWebSocketEvent(event, listener)](#onwebsocketeventevent-listener)
-    - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
-  - [onceWebSocketEvent(event, listener)](#oncewebsocketeventevent-listener)
-  - [offWebSocketEvent(event, listener)](#offwebsocketeventevent-listener)
+  - [onWebSocketEvent(event, listener, tag)](#onwebsocketevent-event-listener-tag)
+  - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
+  - [onceWebSocketEvent(event, listener, tag)](#oncewebsocketevent-event-listener-tag)
+  - [offWebSocketEvent(event, listenerOrTag)](#offwebsocketevent-event-listenerortag)
   - [broadcastToRoom(roomNamespace, roomId, event, data, options)](#broadcasttoroomroomnamespace-roomid-event-data-options)
   - [toSocketId(socketId, event, data)](#tosocketidsocketid-event-data)
   - [toSocketIds(socketIds, event, data)](#tosocketidssocketids-event-data)
@@ -44,9 +44,9 @@
 
 - [WebSocketConnector](#websocketconnector)
   - [constructor(options)](#constructoroptions-1)
-  - [on(event, listener)](#onevent-listener)
-  - [once(event, listener)](#onceevent-listener)
-  - [off(event, listener)](#offevent-listener)
+  - [on(event, listener, tag)](#onevent-listener-tag)
+  - [once(event, listener, tag)](#onceevent-listener-tag)
+  - [off(event, listenerOrTag)](#offevent-listenerortag)
   - [emit(event, data, callback, options)](#emitevent-data-callback-options)
   - [emitWithPromise(event, data, options)](#emitwithpromiseevent-data-options)
   - [reconnect(repeatReset)](#reconnectrepeatReset)
@@ -175,8 +175,7 @@
     本配置用于建立发布者与订阅者连接，支持跨服务器通信、健康检查与消息路由。
 
 ---
-
-## onCrossServerEvent(event, listener)
+## onCrossServerEvent(event, listener, tag)
 
 ### 描述  
 注册一个 **跨服务器事件监听器**，用于处理从其他服务器节点发送过来的事件。  
@@ -187,23 +186,17 @@
 
 ### 参数
 
-- `event` `{string}`: 要监听的事件名（跨服务器事件名称）。
-- `listener` `{Function}`: 事件处理函数，接收到跨服务器广播的事件时将被调用。
+- `event` `{string}`：要监听的事件名（跨服务器事件名称）。
+- `listener` `{Function}`：事件处理函数，接收到跨服务器广播的事件时将被调用。
+- `tag` `{string|number}` [可选]：用于标识该监听器的自定义标签，方便未来移除。
 
 ### 返回值
 
 - `void`
 
-### 示例
-
-```js
-adapter.onCrossServerEvent("server-reload", (data) => {
-    console.log("收到来自其他服务器的重载指令:", data);
-});
-```
 ---
 
-## onceCrossServerEvent(event, listener)
+## onceCrossServerEvent(event, listener, tag)
 
 ### 描述  
 注册一个 **只触发一次的跨服务器事件监听器**，用于处理从其他服务器发送过来的事件。  
@@ -213,40 +206,33 @@ adapter.onCrossServerEvent("server-reload", (data) => {
 
 ### 参数
 
-- `event` `{string}`: 要监听的事件名称（跨服务器事件）。
-- `listener` `{Function}`: 事件处理函数。
+- `event` `{string}`：要监听的事件名称（跨服务器事件）。
+- `listener` `{Function}`：事件处理函数。
+- `tag` `{string|number}` [可选]：用于标识该监听器的自定义标签，方便未来移除。
 
 ### 返回值
 
 - `void`
 
-### 示例
-
-```js
-adapter.onceCrossServerEvent("cluster-ready", (data) => {
-    console.log("仅处理一次的集群准备事件:", data);
-});
-```
-
 ---
 
-## offCrossServerEvent(event, listener)
+## offCrossServerEvent(event, listenerOrTag)
 
 ### 功能说明
 
-移除指定的跨服务器事件监听器。
+移除指定的跨服务器事件监听器。  
+- 若传入的是函数，则移除该函数对应的监听器。  
+- 若传入的是字符串或数字，则移除匹配该标签的监听器。  
+- 若不传 `listenerOrTag`，则移除该事件下的所有监听器。
 
 ### 参数说明
 
 - `event` `{string}`：要移除监听器的事件名称。
-- `listener` `{Function}`：之前注册的事件处理函数，需要被移除。
+- `listenerOrTag` `{Function|string|number}` [可选]：要移除的监听函数或标签。
 
-### 详细描述
+### 返回值
 
-该方法会移除已注册的指定跨服务器事件监听器函数。  
-如果未找到对应函数，将不会有任何操作。  
-当你不再需要监听某个事件（例如通过 `onCrossServerEvent` 或 `onceCrossServerEvent` 注册的事件）时，可以调用此方法，  
-用于防止内存泄漏或避免不必要的重复调用。
+- `void`
 
 ---
 
@@ -624,11 +610,12 @@ adapter.emitCrossServer(
 
 ---
 
-## onWebSocketEvent(event, listener)
+## onWebSocketEvent(event, listener, tag)
 
 ### 描述
-注册一个针对特定 WebSocket 事件的监听器。
-你可以注册对应的系统事件函数，对系统事件进行处理:
+注册一个针对特定 WebSocket 事件的监听器。  
+你可以注册对应的系统事件函数，对系统事件进行处理。
+
 ### 系统内置 WebSocket 事件说明
 - `connection`：当客户端连接时触发，回调参数：(socket, req)
 - `close`：当客户端断开时触发，回调参数：(socket, req, code, reason)
@@ -641,48 +628,41 @@ adapter.emitCrossServer(
 - `ws-server-close`：当 WebSocket 服务器关闭时触发
 
 ### 参数
-- event：要监听的事件名称。
-- listener：当事件被触发时调用的回调函数。
+- `event` {string|number} — 要监听的事件名称。  
+- `listener` {Function} — 当事件被触发时调用的回调函数。  
+- `tag` {string|number} [可选] — 用于标识监听器的自定义标签，方便后续移除。
 
 ### 返回值
 - void
 
-### 示例
-
-  ```js
-  // 接收到客户端 say 事件，并且响应回调给客户端
-  adapter.onWebSocketEvent('say', (socket, data, callback) => {
-    console.log(data)
-    if (callback) {
-      callback({ msg: 'This is a callback response for "say"' })
-    }
-  })
-  ```
-
 ---
 
-## onceWebSocketEvent(event, listener)
+## onceWebSocketEvent(event, listener, tag)
 
 ### 描述
 注册一个仅会被触发一次的特定 WebSocket 事件监听器。
 
 ### 参数
-- event：要监听的事件名称。
-- listener：当事件被触发时调用的回调函数。
+- `event` {string|number} — 要监听的事件名称。  
+- `listener` {Function} — 当事件被触发时调用的回调函数。  
+- `tag` {string|number} [可选] — 用于标识监听器的自定义标签，方便后续移除。
 
 ### 返回值
 - void
 
 ---
 
-## offWebSocketEvent(event, listener)
+## offWebSocketEvent(event, listenerOrTag)
 
 ### 描述
-移除特定 WebSocket 事件的监听器。
+移除特定 WebSocket 事件的监听器。  
+- 如果 `listenerOrTag` 是函数，则移除对应的函数监听器。  
+- 如果是字符串或数字，则移除对应标签的监听器。  
+- 如果未传，则移除该事件下所有监听器。
 
 ### 参数
-- event：要移除监听器的事件名称。
-- listener：要移除的监听函数。
+- `event` {string|number} — 要移除监听器的事件名称。  
+- `listenerOrTag` {Function|string|number} [可选] — 要移除的监听函数或标签，若不传则移除该事件下所有监听器。
 
 ### 返回值
 - void
@@ -1087,42 +1067,48 @@ adapter.emitCrossServer(
   ```
 ---
 
-## on(event, listener)
+## on(event, listener, tag)
 
 ### 描述  
 注册一个事件监听器，当指定事件被触发时执行对应回调函数。
 
 ### 参数  
 - event {string}: 要监听的事件名称  
-- listener {function}: 事件触发时要执行的回调函数
+- listener {function}: 事件触发时要执行的回调函数  
+- tag {string|number} [可选]: 自定义标签，用于后续移除监听器时标识
 
 ## 返回值
 - `void`
 
 ---
 
-## once(event, listener)
+## once(event, listener, tag)
 
 ### 描述  
 注册一个一次性事件监听器，该监听器只会在事件首次触发时执行一次，之后会被自动移除。
 
 ### 参数  
 - event {string}: 要监听的事件名称  
-- listener {function}: 事件首次触发时要执行的回调函数
+- listener {function}: 事件首次触发时要执行的回调函数  
+- tag {string|number} [可选]: 自定义标签，用于后续移除监听器时标识
 
 ## 返回值
 - `void`
 
 ---
 
-## off(event, listener)
+## off(event, listenerOrTag)
 
 ### 描述  
 移除已注册的事件监听器，使其不再响应指定事件。
 
+- 如果 `listenerOrTag` 是函数，则移除对应的回调函数监听器。  
+- 如果 `listenerOrTag` 是字符串或数字，则移除带有对应标签的监听器。  
+- 如果不传 `listenerOrTag`，则删除该事件下所有监听器。
+
 ### 参数  
 - event {string}: 要移除监听器的事件名称  
-- listener {function}: 要移除的回调函数
+- listenerOrTag {function|string|number} [可选]: 要移除的监听函数或标签
 
 ## 返回值
 - `void`
