@@ -3,9 +3,9 @@
 
 - [WebSocketCrossServerAdapter](#websocketcrossserveradapter)
   - [Constructor(options)](#constructoroptions)
-  - [onCrossServerEvent(event, listener, tag)](#oncrossserverevent-event-listener-tag)
-  - [onceCrossServerEvent(event, listener, tag)](#oncecrossserverevent-event-listener-tag)
-  - [offCrossServerEvent(event, listenerOrTag)](#offcrossserverevent-event-listenerortag)
+  - [onCrossServerEvent(event, listener, tag)](#oncrossservereventevent-listener-tag)
+  - [onceCrossServerEvent(event, listener, tag)](#oncecrossservereventevent-listener-tag)
+  - [offCrossServerEvent(event, listenerOrTag)](#offcrossservereventevent-listenerortag)
   - [publishRedisMessage(channel, message)](#publishredismessagechannel-message)
   - [emitCrossServer(event, message, callback, options)](#emitcrossserverevent-message-callback-options)
   - [emitCrossServerWithPromise(event, message, options)](#emitcrossserverwithpromiseevent-message-options)
