@@ -65,7 +65,7 @@ class WebSocketConnector {
             //autoReconnect: true,      // Whether to enable auto-reconnect (enabled by default)
             fastReconnectThreshold: 3,            // Maximum fast reconnect attempts
             fastReconnectInterval: 3000, // Fast reconnect interval
-            reconnectMaxInterval: 120_000, // Maximum interval
+            reconnectMaxInterval: 120000, // Maximum interval
             pingMsg: '',              // Ping message sent to the server
             callbackTimeout: 5000,    // Timeout for callback functions
             repeatLimit: null,        // Maximum reconnection attempts
