@@ -18,7 +18,7 @@
   - [getHealthyRedisInstancesCount(type)](#gethealthyredisinstancescounttype)
   - [getRedisInstancesCount()](#getredisinstancescount)
   - [onWebSocketEvent(event, listener, tag)](#onwebsocketeventevent-listener-tag)
-     - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
+  - [系统内置 WebSocket 事件说明](#系统内置-websocket-事件说明)
   - [onceWebSocketEvent(event, listener, tag)](#oncewebsocketeventevent-listener-tag)
   - [offWebSocketEvent(event, listenerOrTag)](#offwebsocketeventevent-listenerortag)
   - [broadcastToRoom(roomNamespace, roomId, event, data, options)](#broadcasttoroomroomnamespace-roomid-event-data-options)
@@ -941,8 +941,8 @@ adapter.emitCrossServer(
 - `socketId {string}`：用户的 socket ID（不能为空字符串）。
 - `socket {Object}`：WebSocket 连接对象。
 
-### 抛出
-- 如果 `socketId` 不是字符串或者 `socket` 无效，抛出错误。
+### 返回值
+- `void`
 
 ---
 
@@ -954,8 +954,8 @@ adapter.emitCrossServer(
 ### 参数
 - `socketId {string}`：用户的 socket ID（不能为空字符串）。
 
-### 抛出
-- 如果 `socketId` 不是字符串，抛出 `TypeError`。
+### 返回值
+- `void`
 
 ---
 
@@ -969,9 +969,6 @@ adapter.emitCrossServer(
 
 ### 返回值
 - `WebSocket|null`：找到返回对应 WebSocket 实例，否则返回 null。
-
-### 抛出
-- 如果 `socketId` 不是字符串，抛出 `TypeError`。
 
 ---
 

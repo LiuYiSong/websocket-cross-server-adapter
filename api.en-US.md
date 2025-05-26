@@ -934,8 +934,8 @@ Therefore, if you use numeric IDs, you must convert them to strings before stori
 - `socketId {string}`: The user's socket ID (must be a non-empty string).
 - `socket {Object}`: The WebSocket connection object.
 
-### Throws
-- Throws an error if `socketId` is not a string or if `socket` is falsy.
+### Returns
+- `void`
 
 ---
 
@@ -948,8 +948,8 @@ This method should be called when the client disconnects to properly clear the s
 ### Parameters
 - `socketId {string}`: The user's socket ID (must be a non-empty string).
 
-### Throws
-- Throws `TypeError` if `socketId` is not a string.
+### Returns
+- `void`
 
 ---
 
@@ -963,9 +963,6 @@ Gets the WebSocket instance for a given socket ID.
 
 ### Returns
 - `WebSocket|null`: The WebSocket instance if found, otherwise null.
-
-### Throws
-- Throws `TypeError` if `socketId` is not a string.
 
 ---
 
