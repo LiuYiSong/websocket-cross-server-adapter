@@ -641,7 +641,7 @@ class WebSocketCrossServerAdapter {
                 });
             } else if (message.socketId) {
                 // If message contains a single socketId, send to one WebSocket
-                if (typeof message.socketId === 'string' && message.socketId) {
+                if (typeof message.socketId === 'string') {
                     const ws = this.socketMap.get(message.socketId);
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(message.data);
