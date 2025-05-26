@@ -41,6 +41,8 @@ Supported Message Sending Methods:
 - Batch sending by socketId  
 - Distributed room broadcasting  
 
+No matter which WebSocket server node the client is connected to, messages can be delivered precisely.
+
 Supports room namespace management and cross-node statistics (e.g., online users, room members). Event handlers can be registered on any server node, and cross-node events can directly callback to clients without the need for intermediate routing.
 
 ### WebSocketConnector (Client Connection Manager)
