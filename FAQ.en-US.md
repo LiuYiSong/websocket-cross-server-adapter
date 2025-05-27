@@ -20,6 +20,8 @@
   - [17. How to securely and compatibly transmit authentication and other sensitive information?](#17-how-to-securely-and-compatibly-transmit-authentication-and-other-sensitive-information)
   - [18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?](#18-why-does-websocket-still-need-a-heartbeat-mechanism-isnt-the-close-event-enough)
   - [19. How to Deploy a Node.js Service? Any Recommended Methods?](#19-how-to-deploy-a-nodejs-service-any-recommended-methods)
+  - [20. Does the WebSocket service support sharing a port with an existing HTTP server?](#20-does-the-websocket-service-support-sharing-a-port-with-an-existing-http-server)
+  - [21. How to test across physical servers?](#21-how-to-test-across-physical-servers)
 
 
 ## FAQ
@@ -614,6 +616,136 @@ For more details and configuration instructions, please refer to:
 - [PM2 Official Website](https://pm2.keymetrics.io/)
 - [GitHub Repository](https://github.com/Unitech/pm2)
 - [PM2 CLI Documentation](https://pm2.keymetrics.io/docs/usage/pm2-cli/)
+
+### 20. Does the WebSocket service support sharing a port with an existing HTTP server?
+
+Yes. In addition to starting with its own listening port, a WebSocket server also supports running on top of an existing HTTP(S) server by sharing the same port, using the HTTP protocol upgrade mechanism.
+
+
+#### ✅ 1. Starting WebSocket with an existing HTTP(S) server(Shared Port)
+
+When starting a WebSocket server using an existing HTTP or HTTPS server, the WebSocket connection **shares the same port** as the HTTP(S) service.  
+This works via the HTTP protocol’s **Upgrade mechanism**:
+
+- The WebSocket client first sends a standard HTTP request with the `Upgrade: websocket` header;
+- The HTTP(S) server receives the request and upgrades the connection to the WebSocket protocol;
+- The upgraded connection is then **handled by the `ws.Server` instance**;
+- As a result, both HTTP requests and WebSocket connections use the same underlying TCP port (e.g., 8080 or 443).
+
+This approach is especially useful when you want your **web application (e.g., frontend pages or APIs) and WebSocket service to run on the same port**, simplifying deployment and port management.
+
+For more details, please refer to the official documentation: [ws GitHub - External HTTPS Server](https://github.com/websockets/ws?tab=readme-ov-file#external-https-server)
+
+You can attach WebSocket to an existing HTTP server:
+
+```js
+const http = require('http');
+// const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
+const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
+const server = http.createServer();
+const wsServer = new WebSocketCrossServerAdapter({
+  wsOptions: {
+    server
+  }
+});
+
+server.listen(9000, () => {
+  console.log('Server is running on port 9000');
+});
+
+wsServer.onWebSocketEvent('connection', (socket, req) => {
+  console.log('Client connection');
+})
+
+// ............................other logic remains the same
+
+
+```
+
+#### ✅ 2. Using noServer Mode (Manually Handle Upgrade Request)
+
+You can use the `noServer` mode to manually handle HTTP upgrade requests. This mode is useful when you want full control over the HTTP service and WebSocket upgrade process — for example, serving both HTTP and WebSocket connections on the same server.
+
+**Use cases:**  
+- Sharing the same port between WebSocket and HTTP(S)  
+- Implementing custom authentication or permission checks  
+- Fine-grained control over how and when to establish WebSocket connections
+
+📚 See official documentation for details:  
+[ws GitHub - noServer Mode](https://github.com/websockets/ws#client-authentication)
+
+```js
+  const http = require('http');
+  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
+  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
+  const server = http.createServer();
+  const wsServer = new WebSocketCrossServerAdapter({
+    wsOptions: {
+      noServer: true
+    }
+  });
+
+  server.listen(9000, () => {
+    console.log('Server is running on port 9000');
+  });
+
+  server.on('upgrade', (req, socket, head) => {
+    // 1. Check that the Upgrade header must be 'websocket'
+    if (req.headers['upgrade']?.toLowerCase() !== 'websocket') {
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const data = wsServer.parseWsRequestParams(req);
+    console.log('Passed parameters:')
+    console.log(data)
+
+    const id = data.params.id;
+    console.log("Connected client id: " + id);
+
+    if (id) {
+      // Get the WebSocket.Server instance from wsServer and handle the WebSocket protocol upgrade
+      wsServer.getWss()?.handleUpgrade(req, socket, head, (ws) => {
+        // Simulate authentication and bind playerId to the WebSocket instance
+        ws.playerId = String(id);
+        // Manually emit the 'connection' event so the connection goes through the standard handler
+        wsServer.getWss()?.emit('connection', ws, req);
+      })
+    } else {
+      // Simulate authentication failure, return 401 error and close connection
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); // Send HTTP response to reject the connection
+      socket.destroy(); // Destroy the socket connection
+    }
+  });
+
+  wsServer.onWebSocketEvent('connection', (socket, req) => {
+    console.log('Client connection');
+    console.log('Client id: ' + socket.playerId);
+    //.................... other logic remains the same
+  })
+
+  // ............................ other logic remains the same
+
+```
+
+#### ✅ Recommended WebSocket Authentication Approach
+
+In real-world applications, it is recommended to complete user authentication **as soon as the client initiates the connection request**, with the server validating the identity information upon receiving the request.  
+Avoid deferring authentication until after the connection is established and then forcibly disconnecting unauthenticated clients. This approach can lead to unnecessary server resource consumption and increased security risks.  
+If you must perform authentication **after** the connection is established, be sure to implement a timeout mechanism for unauthenticated clients or periodically inspect and clean up invalid connections to prevent resource exhaustion caused by malicious or idle clients.
+
+It is recommended to use modules like [`jsonwebtoken`](https://github.com/auth0/node-jsonwebtoken) to verify tokens provided in the request.  
+
+> **Additionally, it's recommended to perform authentication via an HTTP endpoint before initiating the WebSocket connection.**  
+> This is because during the WebSocket upgrade process, authentication failure messages are handled inconsistently across platforms and client environments.  
+> In many cases, the client may not receive clear error codes or reasons, making reconnection and error handling unreliable.  
+> Performing authentication in advance via HTTP can avoid these issues, improving user experience and connection stability on the client side.
+
+
+### 21. How to test across physical servers?
+
+In a single-server environment, testing can be done by running multiple processes. When testing across physical servers is required, the WebSocket + CrossServer services need to be deployed on multiple physical or virtual machines. One or more Redis nodes should be configured publicly. All service nodes must use the same Redis address, port, and related configurations. It is important to ensure that firewalls and network settings allow proper communication between all servers and the Redis ports, and that Redis is configured to allow remote access. Clients can connect to different server instances to test whether message broadcasting, targeted sending, and callback functionalities work correctly across nodes. In theory, this architecture can scale indefinitely to support scenarios with a massive number of players.
 
 ---
 

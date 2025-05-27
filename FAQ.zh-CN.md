@@ -20,10 +20,12 @@
   - [17. 如何安全且兼容地传递认证及其他敏感信息？](#17-如何安全且兼容地传递认证及其他敏感信息)
   - [18. 为什么 WebSocket 还需要心跳机制？是不是有 close 事件就够了？](#18-为什么-websocket-还需要心跳机制是不是有-close-事件就够了)
   - [19. Node.js 服务该如何部署？有没有推荐的方式？](#19-nodejs-服务该如何部署有没有推荐的方式)
+  - [20. WebSocket 服务是否支持与已有 HTTP 服务器共用端口？](#20-websocket-服务是否支持与已有-http-服务器共用端口)
+  - [21. 如何进行跨物理服务器的测试？](#21-如何进行跨物理服务器的测试)
 
 ## 常见问题
 
-### 1.如何实现客户端到服务器端再到逻辑服务器的消息转发与回调？
+### 1. 如何实现客户端到服务器端再到逻辑服务器的消息转发与回调？
 
 在典型游戏场景中，客户端向所在的WebSocket服务器节点发送请求，例如匹配请求。这些请求通常需要由游戏逻辑服务器（如 GameServer）处理，并将结果返回客户端。
 
@@ -595,6 +597,130 @@ WebSocketConnector 主要面向浏览器前端使用，此外还支持像 Cocos 
 - [PM2 官网](https://pm2.keymetrics.io/)
 - [GitHub 仓库](https://github.com/Unitech/pm2)
 - [PM2 命令文档](https://pm2.keymetrics.io/docs/usage/pm2-cli/)
+
+### 20. WebSocket 服务是否支持与已有 HTTP 服务器共用端口？
+
+是的，WebSocket 服务除了可以单独监听端口启动外，还支持与已有的 HTTP(S) Server 共享端口运行，使用的是 HTTP 协议的 “协议升级（Protocol Upgrade）” 机制。
+
+#### ✅ 1. 使用已有 HTTP(S) Server 启动 WebSocket（共享端口）
+
+当使用已有的 HTTP 或 HTTPS 服务器启动 WebSocket 服务时，WebSocket 将会与 HTTP(S) 共用同一个端口。  
+这是通过 HTTP 协议的“协议升级”（Protocol Upgrade）机制实现的。
+
+- WebSocket 客户端最初会发送一个普通的 HTTP 请求，请求头中包含 `Upgrade: websocket` 字段；
+- HTTP(S) 服务器接收到该请求后，会将连接“升级”为 WebSocket 协议；
+- 此时由 `ws.Server` 实例接管连接处理逻辑；
+- 最终，HTTP 请求和 WebSocket 连接共享同一个 TCP 端口（例如 8080 或 443）。
+
+这种方式特别适用于你希望 **Web 应用（如网页、API）和 WebSocket 服务共用同一个端口** 的场景，可以避免占用多个端口，方便部署与管理。
+
+详情请查看官方文档：[ws GitHub - External HTTPS Server](https://github.com/websockets/ws?tab=readme-ov-file#external-https-server)
+
+你可以传入已有的 HTTP Server 实例启动 WebSocket 服务：
+
+```js
+  const http = require('http');
+  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
+  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
+  const server = http.createServer();
+  const wsServer = new WebSocketCrossServerAdapter({
+    wsOptions: {
+      server
+    }
+  });
+
+  server.listen(9000, () => {
+    console.log('Server is running on port 9000');
+  });
+
+  wsServer.onWebSocketEvent('connection', (socket, req) => {
+    console.log('Client connection');
+  })
+
+// ............................其他逻辑相同
+
+```
+
+#### ✅ 2. 使用 noServer 模式（手动处理 upgrade 请求）
+你可以通过 noServer 模式手动处理 HTTP 升级请求。这种方式适用于你希望完全控制 HTTP 服务和升级流程的场景，例如在一个服务器上同时处理 HTTP 请求和 WebSocket 连接。
+适用于：
+与现有 HTTP(S) 服务共用端口
+需要自定义认证、权限验证等逻辑
+更精细地控制连接行为
+
+📚 详情请查看官方文档：  
+[ws GitHub - noServer Mode](https://github.com/websockets/ws#client-authentication)
+
+```js
+  const http = require('http');
+  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
+  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
+  const server = http.createServer();
+  const wsServer = new WebSocketCrossServerAdapter({
+    wsOptions: {
+      noServer: true
+    }
+  });
+
+  server.listen(9000, () => {
+    console.log('Server is running on port 9000');
+  });
+
+  server.on('upgrade', (req, socket, head) => {
+    // 1. 检查 Upgrade 头必须是 websocket
+    if (req.headers['upgrade']?.toLowerCase() !== 'websocket') {
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const data = wsServer.parseWsRequestParams(req);
+    console.log('传递参数是：')
+    console.log(data)
+
+    const id = data.params.id;
+    console.log("连接的客户端id:" + id);
+
+    if (id) {
+      // 获取 wsServer 中的 WebSocket.Server 实例，并处理 WebSocket 协议升级请求
+      wsServer.getWss()?.handleUpgrade(req, socket, head, (ws) => {
+        // 模拟完成鉴权，绑定 playerId 到该 WebSocket 实例上
+        ws.playerId = String(id);
+        // 手动触发 'connection' 事件，使该连接走统一的连接处理逻辑
+        wsServer.getWss()?.emit('connection', ws, req);
+      })
+    } else {
+      // 模拟鉴权失败，返回 401 错误并关闭连接
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); // 发送拒绝连接的 HTTP 响应
+      socket.destroy(); // 销毁连接
+    }
+  });
+
+
+  wsServer.onWebSocketEvent('connection', (socket, req) => {
+    console.log('Client connection');
+    console.log('客户端id：' + socket.playerId);
+    //....................其他逻辑相同
+  })
+
+  // ............................其他逻辑相同
+```
+
+  #### ✅ WebSocket 鉴权推荐方式
+
+  在真实业务场景中，建议在客户端发起连接请求时即完成用户身份认证，服务器在接收到连接请求时验证身份信息。
+  不要等连接建立成功后再进行鉴权然后断开，这样会导致服务器资源被不必要地占用，增加安全风险。如果必须在连接成功后进行鉴权，请务必实现认证超时关闭机制，或者定期检查并清理无效连接，防止服务器资源被恶意或无效连接耗尽。
+
+  推荐使用如 [`jsonwebtoken`](https://github.com/auth0/node-jsonwebtoken) 等模块，对请求中携带的 token 进行验证。 
+  
+  > **同时，建议在正式发起 WebSocket 连接之前，先通过 HTTP 接口进行身份验证。**  
+  > 这是因为在 WebSocket 协议升级过程中，服务器返回的鉴权失败信息在不同平台和客户端的表现不一致，  
+  > 很多情况下客户端无法准确接收到具体的错误状态和原因，导致重连或错误处理复杂且不可靠。  
+  > 通过预先的 HTTP 鉴权，可以避免这些问题，提高客户端的用户体验和连接稳定性。
+
+### 21. 如何进行跨物理服务器的测试？
+
+在单服务器环境下，可以通过开启多个进程来进行测试。当需要进行跨物理服务器测试时，则需将 WebSocket + CrossServer 服务部署到多台物理机或虚拟机上，并在公网配置一个或多个 Redis 节点。所有服务节点必须使用相同的 Redis 地址、端口及相关配置，确保防火墙和网络允许各服务器与 Redis 端口之间的正常通信，同时 Redis 需要开启远程访问功能。客户端可以分别连接不同的服务器实例，测试消息广播、定向发送和回调等功能是否能跨节点正常工作。理论上，该架构可以无限扩展，满足海量玩家的场景需求。
 
 ---
 

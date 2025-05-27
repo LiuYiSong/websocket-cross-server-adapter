@@ -20,7 +20,7 @@
 
 ## Why Build This Framework?
 
-Native `ws` is just the communication foundation, and features like heartbeat, reconnection, message callbacks, and room routing need to be implemented manually. Node.js's single-threaded nature and memory limitations make it difficult to handle large numbers of connections and complex business logic. To support multi-process or distributed multi-server coordination and room management, a distributed architecture is essential. This is the reason behind creating this framework.
+Although the native [ws](https://github.com/websockets/ws) module provides basic WebSocket communication capabilities, it is very low-level. Common features such as heartbeat detection, automatic reconnection, message callbacks, room management, and broadcasting all have to be implemented manually by developers. In real-world projects, Node.js’s single-threaded model and memory limitations make it difficult for a single process to handle high-concurrency connections and complex business logic. When you need to scale horizontally—running multiple processes or servers—these issues become even more pronounced: how do you synchronize user and room states across nodes? How do you broadcast messages across servers? How do you ensure communication logic remains correct and consistent? These are challenges that [ws](https://github.com/websockets/ws) does not solve out of the box. That’s why we built this framework: to provide essential capabilities that native [ws](https://github.com/websockets/ws) lacks—such as distributed room and connection management, cross-server communication, and event callback mechanisms—while keeping the development experience simple, so developers can focus on their business logic rather than the intricacies of distributed WebSocket architecture.
 
 ## How It Works (Core Architecture)
 
@@ -43,7 +43,7 @@ Supported Message Sending Methods:
 
 No matter which WebSocket server node the client is connected to, messages can be delivered precisely.
 
-Supports room namespace management and cross-node statistics (e.g., online users, room members). Event handlers can be registered on any server node, and cross-node events can directly callback to clients without the need for intermediate routing.
+Supports room namespace management and cross-node statistics (e.g., online users, room members). 
 
 ### WebSocketConnector (Client Connection Manager)
 
@@ -409,134 +409,10 @@ please refer to the API documentation for the following functions and test accor
 
 These functions allow you to send event messages to specific socket clients.
 
-#### Additional Notes 2: WebSocket Startup Modes (noServer / with existing Server)
-
-Besides the default port-based startup, the WebSocket server also supports two advanced modes:
-
-#### ✅ 1. Starting WebSocket with an existing HTTP(S) server(Shared Port)
-
-When starting a WebSocket server using an existing HTTP or HTTPS server, the WebSocket connection **shares the same port** as the HTTP(S) service.  
-This works via the HTTP protocol’s **Upgrade mechanism**:
-
-- The WebSocket client first sends a standard HTTP request with the `Upgrade: websocket` header;
-- The HTTP(S) server receives the request and upgrades the connection to the WebSocket protocol;
-- The upgraded connection is then **handled by the `ws.Server` instance**;
-- As a result, both HTTP requests and WebSocket connections use the same underlying TCP port (e.g., 8080 or 443).
-
-This approach is especially useful when you want your **web application (e.g., frontend pages or APIs) and WebSocket service to run on the same port**, simplifying deployment and port management.
-
-For more details, please refer to the official documentation: [ws GitHub - External HTTPS Server](https://github.com/websockets/ws?tab=readme-ov-file#external-https-server)
-
-You can attach WebSocket to an existing HTTP server:
-
-```js
-const http = require('http');
-// const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
-const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
-const server = http.createServer();
-const wsServer = new WebSocketCrossServerAdapter({
-  wsOptions: {
-    server
-  }
-});
-
-server.listen(9000, () => {
-  console.log('Server is running on port 9000');
-});
-
-wsServer.onWebSocketEvent('connection', (socket, req) => {
-  console.log('Client connection');
-})
-
-// ............................other logic remains the same
-
-
-```
-
-#### ✅ 2. Using noServer Mode (Manually Handle Upgrade Request)
-
-You can use the `noServer` mode to manually handle HTTP upgrade requests. This mode is useful when you want full control over the HTTP service and WebSocket upgrade process — for example, serving both HTTP and WebSocket connections on the same server.
-
-**Use cases:**  
-- Sharing the same port between WebSocket and HTTP(S)  
-- Implementing custom authentication or permission checks  
-- Fine-grained control over how and when to establish WebSocket connections
-
-📚 See official documentation for details:  
-[ws GitHub - noServer Mode](https://github.com/websockets/ws#client-authentication)
-
-```js
-  const http = require('http');
-  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
-  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
-  const server = http.createServer();
-  const wsServer = new WebSocketCrossServerAdapter({
-    wsOptions: {
-      noServer: true
-    }
-  });
-
-  server.listen(9000, () => {
-    console.log('Server is running on port 9000');
-  });
-
-  server.on('upgrade', (req, socket, head) => {
-    // 1. Check that the Upgrade header must be 'websocket'
-    if (req.headers['upgrade']?.toLowerCase() !== 'websocket') {
-      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-
-    const data = wsServer.parseWsRequestParams(req);
-    console.log('Passed parameters:')
-    console.log(data)
-
-    const id = data.params.id;
-    console.log("Connected client id: " + id);
-
-    if (id) {
-      // Get the WebSocket.Server instance from wsServer and handle the WebSocket protocol upgrade
-      wsServer.getWss()?.handleUpgrade(req, socket, head, (ws) => {
-        // Simulate authentication and bind playerId to the WebSocket instance
-        ws.playerId = String(id);
-        // Manually emit the 'connection' event so the connection goes through the standard handler
-        wsServer.getWss()?.emit('connection', ws, req);
-      })
-    } else {
-      // Simulate authentication failure, return 401 error and close connection
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); // Send HTTP response to reject the connection
-      socket.destroy(); // Destroy the socket connection
-    }
-  });
-
-  wsServer.onWebSocketEvent('connection', (socket, req) => {
-    console.log('Client connection');
-    console.log('Client id: ' + socket.playerId);
-    //.................... other logic remains the same
-  })
-
-  // ............................ other logic remains the same
-
-```
-
-#### ✅ Recommended WebSocket Authentication Approach
-
-In real-world applications, it is recommended to complete user authentication **as soon as the client initiates the connection request**, with the server validating the identity information upon receiving the request.  
-Avoid deferring authentication until after the connection is established and then forcibly disconnecting unauthenticated clients. This approach can lead to unnecessary server resource consumption and increased security risks.  
-If you must perform authentication **after** the connection is established, be sure to implement a timeout mechanism for unauthenticated clients or periodically inspect and clean up invalid connections to prevent resource exhaustion caused by malicious or idle clients.
-
-It is recommended to use modules like [`jsonwebtoken`](https://github.com/auth0/node-jsonwebtoken) to verify tokens provided in the request.  
-
-> **Additionally, it's recommended to perform authentication via an HTTP endpoint before initiating the WebSocket connection.**  
-> This is because during the WebSocket upgrade process, authentication failure messages are handled inconsistently across platforms and client environments.  
-> In many cases, the client may not receive clear error codes or reasons, making reconnection and error handling unreliable.  
-> Performing authentication in advance via HTTP can avoid these issues, improving user experience and connection stability on the client side.
-
 
 #### 💬 Example Summary
 
-The above example demonstrates the typical use cases and key features of a **single WebSocket server architecture (non-distributed)**. 
+The above example fully demonstrates the typical scenarios and key features of communication using a **single WebSocket server** under a non-distributed architecture. It includes connection event management, heartbeat mechanism, network status detection, event registration and handling, request-response callback mechanism, room broadcasting, and automatic reconnection. This covers most common application scenarios and requirements in single-server mode, helping developers quickly build a stable and feature-complete WebSocket service. If distributed functionality is not required, the single-server mode can already meet the majority of common WebSocket application needs.
 
 ---
 
@@ -1270,6 +1146,10 @@ These features demonstrate that:
 > - In a distributed setup, the message-sending logic remains nearly identical to a single-server setup, allowing developers to focus on business logic rather than deployment complexity.  
 > - The system fully supports **true WebSocket-based distributed communication**.
 
+### WebSocket Distributed Example Summary
+
+By combining the WebSocket and CrossServer modules, true WebSocket distributed communication can be easily achieved. Regardless of which node the client connects to, the message delivery process remains consistent with the single-server mode, requiring no changes to the business code. This allows multiple processes and WebSocket servers to run on a multi-core machine, overcoming Node.js single-process memory and performance limitations, and fully utilizing hardware capabilities. Additionally, this architecture supports easy deployment across multiple physical servers, requiring only the configuration of a common Redis node for cross-node communication. The overall design is simple and user-friendly, greatly enhancing system scalability and stability. Distributed WebSocket communication has never been this effortless...
+
 ---
 
 ## Example Summary
@@ -1300,6 +1180,8 @@ Through the examples in the three sections above, you can progressively understa
   - [17. How to securely and compatibly transmit authentication and other sensitive information?](FAQ.en-US.md#17-how-to-securely-and-compatibly-transmit-authentication-and-other-sensitive-information)
   - [18. Why does WebSocket still need a heartbeat mechanism? Isn’t the close event enough?](FAQ.en-US.md#18-why-does-websocket-still-need-a-heartbeat-mechanism-isnt-the-close-event-enough)
   - [19. How to Deploy a Node.js Service? Any Recommended Methods?](FAQ.en-US.md#19-how-to-deploy-a-nodejs-service-any-recommended-methods)
+  - [20. Does the WebSocket service support sharing a port with an existing HTTP server?](FAQ.en-US.md#20-does-the-websocket-service-support-sharing-a-port-with-an-existing-http-server)
+  - [21. How to test across physical servers?](FAQ.en-US.md#21-how-to-test-across-physical-servers)
 ---
 
 ## Contact

@@ -18,9 +18,7 @@
 
 ## 为什么要做这个框架？
 
-原生 `ws` 只是通信基础，心跳、重连、消息回调和房间路由都得自己实现。
-Node.js 单线程和内存限制，让它难以应付大量连接和复杂业务。要支持多进程或者分布式的多服务器协同和房间管理，必须采取分布式的架构，这就是做这个框架的原因。
-
+原生的 [ws](https://github.com/websockets/ws) 模块虽然提供了基本的 WebSocket 通信能力，但它非常底层，像心跳检测、断线重连、消息回调、房间管理、广播等常见需求都需要开发者自行实现。而在实际项目中，Node.js 的单线程模型和内存限制也使得单进程很难支撑高并发连接和复杂业务逻辑。当你需要横向扩展、运行多个进程或服务器时，问题会进一步放大：多个节点之间如何同步用户和房间状态？消息如何跨节点广播？如何确保通信逻辑的正确性与一致性？这些都不是 [ws](https://github.com/websockets/ws) 能直接解决的。因此我们设计了这个框架，目标是在保持开发体验简单的前提下，提供原生 [ws](https://github.com/websockets/ws) 无法覆盖的功能，包括分布式的房间与连接管理、跨服务器通信、事件回调机制等，使开发者能专注于业务本身，而不是通信细节与分布式架构的复杂性。
 
 ## 实现原理
 
@@ -41,8 +39,7 @@ Node.js 单线程和内存限制，让它难以应付大量连接和复杂业务
 - 批量 socketId 发送  
 - 分布式房间广播  
 
-支持房间命名空间管理和跨节点统计（在线用户、房间人数等）。所有事件处理器可任意节点注册，跨节点事件可直接回调客户端，无需中转。
-
+支持房间命名空间管理和跨节点统计（在线用户、房间人数等）。
 
 ### WebSocketConnector（客户端连接管理器）
 
@@ -392,130 +389,10 @@ node client --id=16 --port=9001
 
 它们支持向特定的客户端 Socket 连接发送事件消息。
 
-#### 补充说明2：WebSocket 启动方式（noServer / 指定已有 Server）
-
-除了默认监听端口启动外，WebSocket 服务器还支持以下两种方式启动：
-
-#### ✅ 1. 使用已有 HTTP(S) Server 启动 WebSocket（共享端口）
-
-当使用已有的 HTTP 或 HTTPS 服务器启动 WebSocket 服务时，WebSocket 将会与 HTTP(S) 共用同一个端口。  
-这是通过 HTTP 协议的“协议升级”（Protocol Upgrade）机制实现的。
-
-- WebSocket 客户端最初会发送一个普通的 HTTP 请求，请求头中包含 `Upgrade: websocket` 字段；
-- HTTP(S) 服务器接收到该请求后，会将连接“升级”为 WebSocket 协议；
-- 此时由 `ws.Server` 实例接管连接处理逻辑；
-- 最终，HTTP 请求和 WebSocket 连接共享同一个 TCP 端口（例如 8080 或 443）。
-
-这种方式特别适用于你希望 **Web 应用（如网页、API）和 WebSocket 服务共用同一个端口** 的场景，可以避免占用多个端口，方便部署与管理。
-
-详情请查看官方文档：[ws GitHub - External HTTPS Server](https://github.com/websockets/ws?tab=readme-ov-file#external-https-server)
-
-你可以传入已有的 HTTP Server 实例启动 WebSocket 服务：
-
-```js
-  const http = require('http');
-  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
-  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
-  const server = http.createServer();
-  const wsServer = new WebSocketCrossServerAdapter({
-    wsOptions: {
-      server
-    }
-  });
-
-  server.listen(9000, () => {
-    console.log('Server is running on port 9000');
-  });
-
-  wsServer.onWebSocketEvent('connection', (socket, req) => {
-    console.log('Client connection');
-  })
-
-// ............................其他逻辑相同
-
-```
-
-#### ✅ 2. 使用 noServer 模式（手动处理 upgrade 请求）
-你可以通过 noServer 模式手动处理 HTTP 升级请求。这种方式适用于你希望完全控制 HTTP 服务和升级流程的场景，例如在一个服务器上同时处理 HTTP 请求和 WebSocket 连接。
-适用于：
-与现有 HTTP(S) 服务共用端口
-需要自定义认证、权限验证等逻辑
-更精细地控制连接行为
-
-📚 详情请查看官方文档：  
-[ws GitHub - noServer Mode](https://github.com/websockets/ws#client-authentication)
-
-```js
-  const http = require('http');
-  const WebSocketCrossServerAdapter = require('../../src/WebSocketCrossServerAdapter');
-  // const { WebSocketCrossServerAdapter } = require('websocket-cross-server-adapter');
-  const server = http.createServer();
-  const wsServer = new WebSocketCrossServerAdapter({
-    wsOptions: {
-      noServer: true
-    }
-  });
-
-  server.listen(9000, () => {
-    console.log('Server is running on port 9000');
-  });
-
-  server.on('upgrade', (req, socket, head) => {
-    // 1. 检查 Upgrade 头必须是 websocket
-    if (req.headers['upgrade']?.toLowerCase() !== 'websocket') {
-      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-
-    const data = wsServer.parseWsRequestParams(req);
-    console.log('传递参数是：')
-    console.log(data)
-
-    const id = data.params.id;
-    console.log("连接的客户端id:" + id);
-
-    if (id) {
-      // 获取 wsServer 中的 WebSocket.Server 实例，并处理 WebSocket 协议升级请求
-      wsServer.getWss()?.handleUpgrade(req, socket, head, (ws) => {
-        // 模拟完成鉴权，绑定 playerId 到该 WebSocket 实例上
-        ws.playerId = String(id);
-        // 手动触发 'connection' 事件，使该连接走统一的连接处理逻辑
-        wsServer.getWss()?.emit('connection', ws, req);
-      })
-    } else {
-      // 模拟鉴权失败，返回 401 错误并关闭连接
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); // 发送拒绝连接的 HTTP 响应
-      socket.destroy(); // 销毁连接
-    }
-  });
-
-
-  wsServer.onWebSocketEvent('connection', (socket, req) => {
-    console.log('Client connection');
-    console.log('客户端id：' + socket.playerId);
-    //....................其他逻辑相同
-  })
-
-  // ............................其他逻辑相同
-```
-
-  #### ✅ WebSocket 鉴权推荐方式
-
-  在真实业务场景中，建议在客户端发起连接请求时即完成用户身份认证，服务器在接收到连接请求时验证身份信息。
-  不要等连接建立成功后再进行鉴权然后断开，这样会导致服务器资源被不必要地占用，增加安全风险。如果必须在连接成功后进行鉴权，请务必实现认证超时关闭机制，或者定期检查并清理无效连接，防止服务器资源被恶意或无效连接耗尽。
-
-  推荐使用如 [`jsonwebtoken`](https://github.com/auth0/node-jsonwebtoken) 等模块，对请求中携带的 token 进行验证。 
-  
-  > **同时，建议在正式发起 WebSocket 连接之前，先通过 HTTP 接口进行身份验证。**  
-  > 这是因为在 WebSocket 协议升级过程中，服务器返回的鉴权失败信息在不同平台和客户端的表现不一致，  
-  > 很多情况下客户端无法准确接收到具体的错误状态和原因，导致重连或错误处理复杂且不可靠。  
-  > 通过预先的 HTTP 鉴权，可以避免这些问题，提高客户端的用户体验和连接稳定性。
-
 
   #### 💡 示例总结
 
-  上述示例完整展示了在 **非分布式架构下，使用单 WebSocket 服务器** 进行通信的典型场景与关键能力
+  上述示例完整展示了在**非分布式架构下使用单 WebSocket 服务器**进行通信的典型场景和关键功能。包括连接事件管理、心跳机制、网络状态检测、事件注册与处理、请求与响应的回调机制、房间广播以及断线重连等。几乎涵盖了单服务器模式下大多数常见的应用场景和需求，帮助开发者快速构建稳定且功能完善的 WebSocket 服务。如果不需要分布式功能，单服务器模式已经能够满足大部分常见的 WebSocket 应用需求。
   
 ---
 ### 二. 跨服务通信模块（纯服务端通信）
@@ -1218,6 +1095,11 @@ node boss
 > - 分布式环境下，消息发送逻辑与单服务器模式几乎保持一致，开发者无需额外关注服务器部署细节。  
 > - 整个系统具备了真正意义上的 **WebSocket 分布式通信能力**。
 
+
+### WebSocket 分布式示例总结
+
+通过结合 WebSocket 与 CrossServer 模块，可以轻松实现真正的 WebSocket 分布式通信。无论客户端连接到哪个节点，消息的下发流程和单服务器模式保持一致，无需对业务代码进行任何修改。这样，一台多核机器上可运行多个进程、多个 WebSocket 服务，从而突破 Node.js 单进程的内存和性能限制，充分发挥硬件性能。同时，该架构也支持轻松部署到多台物理服务器，只需配置公共的 Redis 节点进行跨节点通信，整体设计简单易用，极大提升系统的可扩展性和稳定性。分布式，从未如此轻松....
+
 ---
 
 ## 示例总结
@@ -1248,7 +1130,8 @@ node boss
   - [17. 如何安全且兼容地传递认证及其他敏感信息？](FAQ.zh-CN.md#17-如何安全且兼容地传递认证及其他敏感信息)
   - [18. 为什么 WebSocket 还需要心跳机制？是不是有 close 事件就够了？](FAQ.zh-CN.md#18-为什么-websocket-还需要心跳机制是不是有-close-事件就够了)
   - [19. Node.js 服务该如何部署？有没有推荐的方式？](FAQ.zh-CN.md#19-nodejs-服务该如何部署有没有推荐的方式)
-
+  - [20. WebSocket 服务是否支持与已有 HTTP 服务器共用端口？](FAQ.zh-CN.md#20-websocket-服务是否支持与已有-http-服务器共用端口)
+  - [21. 如何进行跨物理服务器的测试？](FAQ.zh-CN.md#21-如何进行跨物理服务器的测试)
 ---
 
 ## 联系方式
