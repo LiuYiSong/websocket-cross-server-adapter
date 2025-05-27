@@ -749,7 +749,7 @@ npx concurrently "node cserver --name=serverA" "node cserver --name=serverB" "no
 
 📌 **📌 Note: Although all servers share the same terminal window for output logs, each server is still an independent Node.js process, fully isolated from each other. concurrently just aggregates their console output for easier observation.**
 
-4. Manually start servers (more intuitive)
+Or manually start servers (more intuitive)
 
 If you prefer each server to run in its own separate terminal window for easier log viewing or debugging, start them individually:
 
@@ -767,7 +767,7 @@ node cserver --name=serverB
 ```
 ⚠️ **⚠️ Each server name must be unique. This is essential to ensure the distributed system works correctly, otherwise it may cause node identification conflicts or message routing errors.**。
 
-5. Start the message sender server
+4. Start the message sender server
 
 This server is used to test cross-server communication sending:
 
