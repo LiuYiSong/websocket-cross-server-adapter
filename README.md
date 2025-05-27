@@ -399,7 +399,6 @@ To simulate reconnection scenarios, try shutting down the server, observe the cl
 
 Disconnected → Reconnecting → Reconnected
 
-#### Additional Notes 1: Targeted Messaging
 
 To test **single-target** or **multi-target** message sending,  
 please refer to the API documentation for the following functions and test accordingly:

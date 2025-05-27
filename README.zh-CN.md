@@ -251,14 +251,15 @@ client.js:
     console.log('Connect on error');
   });
 
+  // 当准备进行下一次重连的时候触发
   client.on('reconnect', ({ repeat, timeout }) => {
     console.log('Preparing for reconnection attempt #' + repeat + ', actual reconnection will occur in ' + timeout + ' ms');
   })
 
+  // 当达到配置的最大重连次数时触发
   client.on('repeat-limit', (repeatLimit) => {
     console.log('Reached maximum reconnection attempts: ' + repeatLimit);
   })
-
 
   client.on('serverSay', (data) => {
     console.log('Received serverSay event:');
@@ -271,16 +272,18 @@ client.js:
   })
 
 
+  // 当进行心跳ping的时候触发
   client.on('ping', () => { 
     console.log('Go to ping....')
   })
 
+  // 当收到心跳回应时候触发
   client.on('pong', (speed) => { 
     // 在pong事件中可以测得当前网络延迟
     console.log(`Network latency: ${speed} ms`);
   })
 
-
+  
   setTimeout(async () => {
     // 使用 Promise 方式发送带有回调的事件
     let data = await client.emitWithPromise('say', { msg: 'I am a client with ID: ' + id + ', and I need your promise callback.' }, {
@@ -379,7 +382,6 @@ node client --id=16 --port=9001
 还可以通过关闭服务器来测试断线场景，观察客户端的重连事件信息，然后再重启服务器，以模拟以下流程：
 断线 → 重连中 → 成功重新连接
 
-#### 补充说明1：定向发送消息
 
 如果你想测试**单点定向发送消息**或**多点定向发送消息**的能力，  
 请参考 API 文档中关于以下函数的说明并自行测试：
