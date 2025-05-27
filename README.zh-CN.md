@@ -542,7 +542,7 @@ const crossServer = new WebSocketCrossServerAdapter({
   onRedisHealthChange: (health, info) => {
     console.log(`Node health status changed:${health}`, info);
   },
-  // 当频道订阅发生错误的时候触发，info对象包含：
+  // 当频道订阅发生错误的时候触发
   onRedisSubscriptionError: (info) => { 
     console.log('onRedisSubscriptionError:', info);
   }
