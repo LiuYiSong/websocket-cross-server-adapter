@@ -107,6 +107,7 @@ class WebSocketCrossServerAdapter {
         }
 
         this.autoUnsubscribe = options.autoUnsubscribe === undefined ? true : options.autoUnsubscribe;
+        this.rateLimit = options.rateLimit !== undefined ? options.rateLimit : 100; // Max messages per second per socket (0 = disabled)
 
         // Initialize data structures
         this.redisConfig = options.redisConfig || []; // Redis node configuration
@@ -684,6 +685,19 @@ class WebSocketCrossServerAdapter {
         if (!socket) {
             debug('Invalid socket instance.');
             return;
+        }
+        // Rate limiting: drop messages that exceed the per-socket threshold
+        if (this.rateLimit > 0) {
+            const now = Date.now();
+            if (!socket._rlWindow || now - socket._rlWindow >= 1000) {
+                socket._rlWindow = now;
+                socket._rlCount = 0;
+            }
+            socket._rlCount = (socket._rlCount || 0) + 1;
+            if (socket._rlCount > this.rateLimit) {
+                debug(`[_handleWebSocketMessage] Rate limit exceeded for socket ${socket.id}`);
+                return;
+            }
         }
 
         // Check if message is a valid string
