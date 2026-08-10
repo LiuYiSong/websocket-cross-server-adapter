@@ -1141,8 +1141,6 @@ node boss
 如果你在使用过程中有任何问题或建议，欢迎随时与我联系交流。
 你也可以通过 GitHub 仓库的 Issues 反馈问题或提出建议。
 
-为了防止邮件被误归类到垃圾邮件，请在邮件主题或正文前面加上 [WebSocketCrossServerAdapter]。
-邮箱：349233775@qq.com
 
 ---
 
