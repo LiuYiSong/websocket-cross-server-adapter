@@ -1188,9 +1188,6 @@ Through the examples in the three sections above, you can progressively understa
 If you have any questions or suggestions while using this project, feel free to contact me anytime.
 You can also report issues or provide feedback via the GitHub repository's Issues page.
 
-To prevent your email from being classified as spam, please add [WebSocketCrossServerAdapter] at the beginning of the email subject or body.
-
-Email: 349233775@qq.com
 
 ---
 
