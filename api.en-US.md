@@ -174,6 +174,14 @@ The constructor for `WebSocketCrossServerAdapter`. This is used to initialize a 
     You can register a **custom channel handler** to process messages from these channels as needed.  
     This allows you to implement custom cross-server communication logic beyond the built-in WebSocket/room-related features.
 
+  - `rateLimit` `{number}`: (Optional) Maximum number of inbound WebSocket messages accepted per socket, per second. Default is `100`.
+
+    **Description**: Limits how many messages — including heartbeat messages — a single WebSocket connection may send within a 1-second window. Excess messages are silently dropped for the remainder of that window; the counter resets automatically once the window elapses.  
+    This is a per-connection ingress safeguard only — it does **not** limit Redis publishes triggered by business-message listeners (e.g. via `broadcastToRoom`, `broadcast`, `emitCrossServer`). Redis-level publish throttling is not covered by this option.  
+    Set to `0` to disable rate limiting entirely.
+
+    ⚠️ **Behavior change**: This option defaults to `100`, not unlimited. Deployments upgrading to a version with this default enabled will get a `100` msg/sec/socket ceiling automatically unless they explicitly pass `rateLimit: 0`.
+
   - `redisConfig` `{Array<Object>}`: (Optional) Redis node configuration.
 
     **Description**: Configuration array for connecting to one or more Redis nodes.  

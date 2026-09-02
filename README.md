@@ -34,6 +34,7 @@ Key Features:
 - Distributed room broadcasting and client tracking  
 - Local-first response with automatic target node routing  
 - Hot-pluggable scaling without needing a restart  
+- Built-in per-connection inbound message rate limiting (`rateLimit` option) to guard against message-flooding clients  
 
 Supported Message Sending Methods:  
 - Global broadcast  
