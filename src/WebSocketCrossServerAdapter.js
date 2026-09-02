@@ -455,6 +455,9 @@ class WebSocketCrossServerAdapter {
                 // Listen for messages from the client
                 socket.on('message', (message) => {
                     if (message === null || message === undefined) return; // Prevent handling null/undefined
+
+                    // Rate limit incoming messages per socket to help prevent message flooding.
+                    // A rateLimit value of 0 disables rate limiting.
                     if (this.rateLimit > 0) {
                         const now = Date.now();
                     
