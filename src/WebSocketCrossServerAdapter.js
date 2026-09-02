@@ -34,6 +34,7 @@ class WebSocketCrossServerAdapter {
      * @param {number} [options.serverPingInterval=20000] - WebSocket ping interval
      * @param {number} [options.enterBackgroundCloseTime=10000] - Close delay after background
      * @param {string} [options.heartbeatStr=''] - Heartbeat string
+     * @param {number} [options.rateLimit=0] - Maximum incoming WebSocket messages per second per socket. Set to 0 to disable.
      * @param {boolean} [options.redisForcePing=true] - Whether to force-enable Redis ping health monitoring
      * @param {number} [options.redisPingInterval=5000] - Redis ping interval
      * @param {number} [options.redisPingTimeout=2000] - Redis ping timeout
@@ -72,6 +73,7 @@ class WebSocketCrossServerAdapter {
         this.serverPingInterval = options.serverPingInterval || 20000; // WebSocket ping interval
         this.enterBackgroundCloseTime = options.enterBackgroundCloseTime || 10000; // Close delay after background
         this.heartbeatStr = options.heartbeatStr || ''; // Heartbeat string
+        this.rateLimit = options.rateLimit !== undefined ? options.rateLimit : 0; // Max incoming messages per second per socket, 0 = disabled
 
         // Redis related settings
         this.redisForcePing = options.redisForcePing !== undefined ? options.redisForcePing : true; // Whether to force-enable Redis ping health monitoring
@@ -453,7 +455,21 @@ class WebSocketCrossServerAdapter {
                 // Listen for messages from the client
                 socket.on('message', (message) => {
                     if (message === null || message === undefined) return; // Prevent handling null/undefined
+                    if (this.rateLimit > 0) {
+                        const now = Date.now();
                     
+                        if (!socket._rlWindow || now - socket._rlWindow >= 1000) {
+                            socket._rlWindow = now;
+                            socket._rlCount = 0;
+                        }
+                    
+                        socket._rlCount = (socket._rlCount || 0) + 1;
+                    
+                        if (socket._rlCount > this.rateLimit) {
+                            debug(`[WebSocket] Rate limit exceeded for socket ${socket.id}`);
+                            return;
+                        }
+                    }
                     /**
                      * Supplement:
                      * Native WebSocket messages may be Buffers (binary).
