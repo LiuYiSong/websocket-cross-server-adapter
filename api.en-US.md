@@ -133,6 +133,22 @@ The constructor for `WebSocketCrossServerAdapter`. This is used to initialize a 
     This value **must be consistent** with the heartbeat payload sent by the client (e.g., via a `WebSocketConnector` class).  
     When the server receives a message matching this string, it replies with the same content as a heartbeat response.
 
+  - `rateLimit` `{number}`: (Optional) Maximum number of incoming WebSocket messages allowed per second for each socket connection. Default is `0` (disabled).
+
+    **Description**:
+    This option can be used to protect the WebSocket server from message flooding.
+    When set to a value greater than `0`, each socket connection can process up to the specified number of incoming messages per second.
+    Messages exceeding the limit are ignored.
+
+    Set this option to `0` to disable rate limiting and preserve the default unrestricted behavior.
+
+    **Example**:
+    ```js
+    const adapter = new WebSocketCrossServerAdapter({
+        rateLimit: 100
+    });
+    ```
+
   - `redisForcePing` `{boolean}`: (Optional) Whether to force-enable Redis ping health monitoring. Default is `true`.
   - `redisPingInterval` `{number}`: (Optional) Redis ping interval. Default is `5000`.
   - `redisPingTimeout` `{number}`: (Optional) Redis ping timeout. Default is `2000`.
