@@ -131,6 +131,21 @@
     必须与客户端发送的心跳包内容一致（如通过 `WebSocketConnector` 类发送）。  
     当服务器收到该字符串的消息时，会使用相同内容进行回应，作为心跳响应。
 
+  - `rateLimit` `{number}`：（可选）单个 WebSocket 连接每秒允许接收的最大消息数量，默认值为 `0`（关闭限流）。
+
+    **说明**：
+    此参数可用于防止客户端大量发送消息造成 WebSocket 服务消息洪泛。
+    当设置为大于 `0` 的数值时，每个 WebSocket 连接每秒最多处理指定数量的消息，超过限制的消息将被直接忽略。
+
+    设置为 `0` 表示关闭消息限流，保持默认的不限制行为。
+
+    **示例**：
+    ```js
+    const adapter = new WebSocketCrossServerAdapter({
+        rateLimit: 100
+    });
+    ```
+
   - `redisForcePing` `{boolean}`：（可选）是否强制启用 Redis 健康检查，默认值为 `true`。
 
   - `redisPingInterval` `{number}`：（可选）Redis 健康检查的发送间隔，默认值为 `5000`。
