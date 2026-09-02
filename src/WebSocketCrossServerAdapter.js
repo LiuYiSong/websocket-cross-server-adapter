@@ -46,6 +46,12 @@ class WebSocketCrossServerAdapter {
      *                                                    This only applies to non-predefined (non-preset) room namespaces.  
      *                                                    Predefined rooms listed in `presetRoomNamespaces` are not affected and remain subscribed.
      * @param {Array<string>|string} [options.customChannels] - Custom channels
+     * @param {number} [options.rateLimit=100] - Maximum number of inbound WebSocket messages (including
+     *        heartbeat messages) accepted per socket, per second. Uses a fixed 1-second window per
+     *        connection; messages beyond the limit are silently dropped for the remainder of that window.
+     *        Set to `0` to disable rate limiting entirely. This only bounds inbound WebSocket ingress per
+     *        connection — it does not limit Redis publish throughput triggered by business-message
+     *        listeners (a separate, out-of-scope concern).
      * @param {Array<Object>} [options.redisConfig=[]] - Redis node configuration
      */
     constructor(options = {}) {
@@ -107,7 +113,7 @@ class WebSocketCrossServerAdapter {
         }
 
         this.autoUnsubscribe = options.autoUnsubscribe === undefined ? true : options.autoUnsubscribe;
-        this.rateLimit = options.rateLimit !== undefined ? options.rateLimit : 100; // Max messages per second per socket (0 = disabled)
+        this.rateLimit = options.rateLimit !== undefined ? options.rateLimit : 100; // Max inbound WebSocket messages per socket per second, including heartbeats (0 = disabled)
 
         // Initialize data structures
         this.redisConfig = options.redisConfig || []; // Redis node configuration
@@ -460,12 +466,19 @@ class WebSocketCrossServerAdapter {
                      * Native WebSocket messages may be Buffers (binary).
                      * Use toString() to ensure consistent string processing.
                      */
-                    message = message.toString(); 
-    
+                    message = message.toString();
+
+                    // Rate limiting is applied to every inbound message — heartbeat or
+                    // business — before any further processing, so heartbeats can no
+                    // longer be used to bypass the per-connection budget.
+                    if (!this._checkRateLimit(socket)) {
+                        return;
+                    }
+
                     if (message === this.heartbeatStr) {
                         // If it is a heartbeat message, respond
                         handleSocketEvent('client-ping', socket);
-                        socket.send(this.heartbeatStr); 
+                        socket.send(this.heartbeatStr);
                     } else {
                         // Handle business-related messages
                         this._handleWebSocketMessage(socket, message);
@@ -674,8 +687,42 @@ class WebSocketCrossServerAdapter {
     }
 
     /**
+     * Checks whether the given socket is within its allowed inbound message rate.
+     *
+     * This is applied to every inbound WebSocket message — heartbeat or business —
+     * before any further processing, so it acts as a single, testable ingress
+     * boundary for the connection. Uses a simple fixed (non-sliding) 1-second
+     * window counter stored on the socket instance.
+     *
+     * Scope note: this only bounds how many messages a single WebSocket connection
+     * may push into this server process. It does not bound the number of Redis
+     * publishes a business-message listener may issue once a message is accepted
+     * (e.g. broadcastToRoom/broadcast can still call publishRedisMessage multiple
+     * times per accepted message). Redis publish throttling is intentionally out
+     * of scope here.
+     *
+     * @param {WebSocket} socket - The WebSocket client instance to check.
+     * @returns {boolean} true if the message should be processed, false if the
+     *          socket has exceeded its rate limit and the message must be dropped.
+     */
+    _checkRateLimit(socket) {
+        if (this.rateLimit <= 0) return true; // Rate limiting disabled
+        const now = Date.now();
+        if (!socket._rlWindow || now - socket._rlWindow >= 1000) {
+            socket._rlWindow = now;
+            socket._rlCount = 0;
+        }
+        socket._rlCount = (socket._rlCount || 0) + 1;
+        if (socket._rlCount > this.rateLimit) {
+            debug('[_checkRateLimit] Rate limit exceeded; dropping inbound message');
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Processes the incoming WebSocket message, parses it, and triggers relevant event listeners.
-     * 
+     *
      * @param {WebSocket} socket - The WebSocket client instance that received the message.
      * @param {string} message - The message received from the client.
      * @returns {void} - This function does not return any value.
@@ -685,19 +732,6 @@ class WebSocketCrossServerAdapter {
         if (!socket) {
             debug('Invalid socket instance.');
             return;
-        }
-        // Rate limiting: drop messages that exceed the per-socket threshold
-        if (this.rateLimit > 0) {
-            const now = Date.now();
-            if (!socket._rlWindow || now - socket._rlWindow >= 1000) {
-                socket._rlWindow = now;
-                socket._rlCount = 0;
-            }
-            socket._rlCount = (socket._rlCount || 0) + 1;
-            if (socket._rlCount > this.rateLimit) {
-                debug(`[_handleWebSocketMessage] Rate limit exceeded for socket ${socket.id}`);
-                return;
-            }
         }
 
         // Check if message is a valid string
